@@ -1,0 +1,55 @@
+{
+  "name": "dsh-fleet",
+  "description": "Multi-host DSH fleet panel: manage several DSH web instances (DSH UI + :40005 dashboards) from one sidebar page",
+  "version": "0.1.5",
+  "private": false,
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "host/*.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "README.en.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web"
+    }
+  },
+  "engines": {
+    "node": ">=22.19"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=0.1.2-alpha.0",
+    "@deepseek-ai/schemastery": ">=0.1.2-alpha.0"
+  },
+  "author": "czhmisaka",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/czhmisaka/dsh-fleet.git"
+  },
+  "homepage": "https://github.com/czhmisaka/dsh-fleet",
+  "keywords": [
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "multi-host",
+    "dashboard"
+  ]
+}

@@ -1,0 +1,8 @@
+# dsh-fleet: install me through the dsh profile patch layer.
+# `role: master` runs the panel + proxies; `role: agent` exposes
+# /fleet-agent/* on a slave so a master can read it.
+- insert:
+    - id: dsh-fleet
+      name: dsh-fleet
+      config:
+        role: master

@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Multi-host DSH",
+    "description": "One panel for the DSH instances on several machines: each one's own DSH UI and :40005 dashboard, plus a cross-host overview."
+  }
+}
