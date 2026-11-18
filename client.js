@@ -843,7 +843,7 @@ window.__ModuleLoader__.load({
                 },
                 entry.running
                   ? h('span', { className: 'dsf-state running' }, h('i', { className: 'dsf-pulse' }), tr('running'))
-                  : h('span', { className: 'dsf-state idle' }, tr('idle')),
+                  : h('i', { className: 'dsf-dot' }),
                 h('span', { className: 'dsf-run-instance' }, entry.instanceName || entry.instanceId),
                 entry.origin === 'subagent' ? h('span', { className: 'dsf-child' }, tr('childTag')) : null,
                 h('span', { className: 'dsf-session-title' }, entry.label || entry.title || String(entry.sessionId).slice(-10)),
@@ -885,7 +885,7 @@ window.__ModuleLoader__.load({
                     },
                     session.running
                       ? h('span', { className: 'dsf-state running' }, h('i', { className: 'dsf-pulse' }), tr('running'))
-                      : h('span', { className: 'dsf-state idle' }, tr('idle')),
+                      : h('i', { className: 'dsf-dot' }),
                     session.origin === 'subagent' ? h('span', { className: 'dsf-child' }, tr('childTag')) : null,
                     h('span', { className: 'dsf-session-title' }, session.label || session.title || String(session.sessionId).slice(-10)),
                     h('span', { className: 'dsf-session-age' }, sessionAge(session.updatedAt))))))
