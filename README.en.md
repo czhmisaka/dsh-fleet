@@ -40,6 +40,7 @@ Three design rules: **don't touch the slaves** (a read-only agent is enough), **
 | 💰 | **Usage** | tokens, cost, cache hit and sessions for today / 7d / 30d by device, model and session |
 | 🌡️ | **Context pressure** | window occupancy bars for running sessions (70% yellow / 85% red) + one-click new session |
 | 🎯 | **Budgets** | per-device or global daily USD budget with thresholds and warnings |
+| 🧭 | **DSH assistant** | Right-hand dock: one-line fleet summary, running sessions, today's usage, dispatch to the least-loaded host, resume sessions, adjust budgets. |
 | 🔐 | **Secure by default** | remote cookies stay in the master credential store; proxies bind `127.0.0.1` and require a key |
 | ⚙️ | **Master / agent roles** | master runs panel + proxies; agents expose read-only `/fleet-agent/*` behind a shared key |
 
@@ -95,6 +96,23 @@ PATCH'
 ### 3. Add hosts
 
 In the panel, rail bottom → **Add** with name, DSH URL, dashboard URL, SSH and ports. Hosts with SSH configured renew their token automatically after a restart.
+
+## DSH assistant
+
+The right-hand dock is a collapsible **DSH assistant**. It does not just chat — it operates the fleet:
+
+<img src="docs/assets/assistant.en.svg" alt="DSH assistant" width="360">
+
+| You say | It does |
+|---|---|
+| Fleet summary | Online / sessions / running / dashboard state per host |
+| Running sessions | Every running session on every host |
+| Usage today | Today's tokens / cost / cache hit per host |
+| Dispatch to /data/proj: run regression | Picks the **least-loaded online host**, creates a session and queues the task |
+| Resume running | Sends a "continue" prompt to every running session |
+| Budget 5 | Updates the global daily budget |
+
+> This is **rule-based v1**: deterministic, predictable, no extra model quota. LLM tool-calling is next.
 
 ## Architecture
 

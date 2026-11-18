@@ -14,7 +14,7 @@
 
 import z from '@deepseek-ai/schemastery'
 import { createRequire } from 'node:module'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { homedir, hostname } from 'node:os'
 import { join } from 'node:path'
@@ -787,6 +787,159 @@ class Fleet {
     }
   }
 
+  /** Candidate hosts for dispatch: online + authorized, fewest running first, lowest latency. */
+  dispatchCandidates() {
+    return [...this.runtimes.values()]
+      .filter((runtime) => runtime.state.online && runtime.state.authed)
+      .map((runtime) => ({
+        runtime,
+        running: runtime.state.sessions?.running ?? 0,
+        latency: runtime.state.latencyMs ?? 9999,
+      }))
+      .sort((a, b) => a.running - b.running || a.latency - b.latency)
+  }
+
+  /** Running (non-subagent) sessions across every host. */
+  async runningSessions() {
+    const out = []
+    for (const runtime of this.runtimes.values()) {
+      const instance = runtime.state.instance
+      if (!runtime.state.authed) continue
+      try {
+        const items = await this.fullSessions(runtime)
+        for (const item of items) {
+          if (item.running !== true || item.origin === 'subagent') continue
+          out.push({
+            instanceId: instance.id,
+            instanceName: instance.name || instance.id,
+            sessionId: item.sessionId,
+            title: typeof item.projections?.values?.title === 'string' ? item.projections.values.title : '',
+            cwd: item.cwd ?? null,
+          })
+        }
+      } catch {
+        // A single host failing should not break the assistant.
+      }
+    }
+    return out
+  }
+
+  /** Deterministic fleet assistant: understand a few intents and execute them. */
+  async assistantReply(message) {
+    const text = String(message ?? '').trim()
+    if (text === '') throw new Error('message is empty')
+    const help = [
+      '我可以帮你：',
+      '· 「状态汇总」：所有实例在线 / 会话 / 运行中 / 看板',
+      '· 「查看运行中」：列出正在跑的会话',
+      '· 「今天花了多少」：tokens / 费用 / 缓存命中',
+      '· 「派发任务 到 /某个/目录：<任务描述>」：选最空闲的机器建会话并下发',
+      '· 「继续运行中的会话」：给所有运行中会话发继续指令',
+      '· 「设置预算 5 美元」：修改全局日预算',
+    ].join('\n')
+    if (/帮助|help|能做什么|怎么用|capabilities/i.test(text)) return { reply: help }
+
+    if (/预算|budget/i.test(text)) {
+      const match = /(\d+(?:\.\d+)?)/u.exec(text)
+      if (match !== null && /设置|设成|改成|调成|set/i.test(text)) {
+        await this.ctx.settings.update(this.ns, { budgetDailyUsd: Number(match[1]) })
+        this.usageCache.clear()
+        return { reply: `已把全局每日预算设为 $${match[1]}，告警阈值沿用 ${Number(this.config.budgetWarnPct) || 80}%。` }
+      }
+      const budget = Number(this.config.budgetDailyUsd) || 0
+      return { reply: budget > 0 ? `当前全局日预算是 $${budget}，告警阈值 ${Number(this.config.budgetWarnPct) || 80}%。` : '当前没有设置全局日预算（0 = 不限）。' }
+    }
+
+    if (/状态|汇总|summary|status|健康|health/i.test(text)) {
+      const snapshot = this.statusSnapshot()
+      if (snapshot.instances.length === 0) return { reply: '还没有配置任何实例。先在左栏底部「添加实例」。' }
+      const lines = snapshot.instances.map((instance) => {
+        const running = instance.sessions?.running ?? 0
+        const sessions = instance.sessions?.count ?? '—'
+        return `· ${instance.name}：${instance.online ? (instance.authed ? '在线' : '需授权') : '离线'} · ${sessions} 会话${running > 0 ? ` · ${running} 运行中` : ''}${instance.panelUrl ? (instance.panel?.ok ? ' · 看板在线' : ' · 看板离线') : ' · 无看板'}`
+      })
+      return { reply: [`共 ${snapshot.instances.length} 台设备：`, ...lines].join('\n') }
+    }
+
+    if (/运行中|在跑|running/i.test(text)) {
+      const sessions = await this.runningSessions()
+      if (sessions.length === 0) return { reply: '当前没有正在运行的会话。' }
+      return {
+        reply: [`共 ${sessions.length} 条运行中会话：`, ...sessions.map((session) => `· ${session.instanceName} · ${session.title || String(session.sessionId).slice(-10)}`)].join('\n'),
+      }
+    }
+
+    if (/花费|花了|花销|费用|开销|用量|消耗|usage|cost|token/i.test(text)) {
+      const cached = this.usageCache.get('today')
+      if (cached === undefined) await this.refreshUsage('today')
+      const usage = this.usageCache.get('today')?.value
+      if (usage === undefined) return { reply: '暂时拿不到用量数据。' }
+      const lines = usage.instances.map((instance) => {
+        const summary = instance.summary
+        if (summary === null || summary === undefined) return `· ${instance.name}：不可用`
+        return `· ${instance.name}：${Math.round(summary.tokens / 1e6)}M tokens · ${typeof summary.costUsd === 'number' ? `$${summary.costUsd.toFixed(2)}` : '费用未知'} · 缓存 ${summary.cacheHit ?? '—'}%`
+      })
+      return { reply: [`今日总计 ${Math.round(usage.totals.tokens / 1e6)}M tokens${typeof usage.totals.costUsd === 'number' ? ` · $${usage.totals.costUsd.toFixed(2)}` : ''}：`, ...lines].join('\n') }
+    }
+
+    if (/继续|恢复|resume/i.test(text)) {
+      const sessions = await this.runningSessions()
+      let count = 0
+      for (const session of sessions.slice(0, 8)) {
+        const runtime = this.runtimes.get(session.instanceId)
+        if (runtime === undefined) continue
+        try {
+          await callRemote(runtime.state.instance.dshUrl, runtime.state.cookie, 'session/prompt', {
+            request: {
+              requestId: randomUUID(),
+              sessionId: session.sessionId,
+              mode: 'queue',
+              content: [{ type: 'text', text: '请继续之前未完成的工作。' }],
+            },
+          })
+          count += 1
+        } catch {
+          // ignore one failed session
+        }
+      }
+      return { reply: count === 0 ? '没有可以继续的会话。' : `已给 ${count} 条运行中会话发送继续指令。` }
+    }
+
+    if (/派发|分配|下发|新建|启动|launch|dispatch|create/i.test(text)) {
+      const candidates = this.dispatchCandidates()
+      if (candidates.length === 0) return { reply: '没有在线且已授权的实例可以派发。' }
+      // Optional explicit target: mention an instance name/id in the message.
+      const named = candidates.find(({ runtime }) => {
+        const instance = runtime.state.instance
+        return text.includes(instance.name || instance.id) || text.includes(instance.id)
+      })
+      const target = named ?? candidates[0]
+      const cwdMatch = /(?:到|在|目录[:：]?\s*)(\/[^\s，,。:：]+)/u.exec(text)
+      const cwd = cwdMatch === null ? '' : cwdMatch[1]
+      const promptMatch = /(?:任务|内容|prompt)[:：]\s*([\s\S]+)$/iu.exec(text)
+      const prompt = promptMatch === null ? '' : promptMatch[1].trim()
+      const instance = target.runtime.state.instance
+      const created = await callRemote(instance.dshUrl, target.runtime.state.cookie, 'session/create', {
+        request: cwd === '' ? {} : { cwd },
+      })
+      const sessionId = created?.sessionId
+      if (typeof sessionId !== 'string' || sessionId === '') throw new Error('session/create returned no sessionId')
+      if (prompt !== '') {
+        await callRemote(instance.dshUrl, target.runtime.state.cookie, 'session/prompt', {
+          request: { requestId: randomUUID(), sessionId, mode: 'queue', content: [{ type: 'text', text: prompt }] },
+        })
+      }
+      this.sessionsFullCache.delete(instance.id)
+      for (const key of [...this.sessionsCache.keys()]) if (key.startsWith(`${instance.id}|`)) this.sessionsCache.delete(key)
+      return {
+        reply: `已派发到「${instance.name || instance.id}」${cwd === '' ? '' : `（目录 ${cwd}）`}${prompt === '' ? '' : `，任务已下发`}。`,
+        action: { type: 'open-session', instanceId: instance.id, sessionId },
+      }
+    }
+
+    return { reply: `我还不会处理这句话。\n\n${help}` }
+  }
+
   registerRoutes() {
     const register = (route) => this.ctx.effect(() => this.ctx.webServer.register(route))
     const guard = (req, res) => {
@@ -943,6 +1096,22 @@ class Fleet {
           json(res, { ...value, stale: false })
         } catch (error) {
           json(res, { ok: false, error: macMessage(error) }, 500)
+        }
+      },
+    })
+    register({
+      kind: 'exact',
+      path: '/fleet/assistant',
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        if (req.method !== 'POST') { json(res, { ok: false, error: 'method not allowed' }, 405); return }
+        this.lastClientAt = Date.now()
+        try {
+          const body = JSON.parse(await readBody(req))
+          const result = await this.assistantReply(body.message)
+          json(res, { ok: true, ...result })
+        } catch (error) {
+          json(res, { ok: false, error: macMessage(error) }, 400)
         }
       },
     })

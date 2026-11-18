@@ -141,6 +141,18 @@ window.__ModuleLoader__.load({
         budgetDailyUsd: '每日预算（USD，0=不限）',
         budgetWarnPct: '预算告警阈值（%）',
         usageSessionNote: '会话 tokens 为累计值；时间范围只筛选该范围内活跃的会话',
+        assistantOpen: '助手',
+        assistantClose: '收起助手',
+        assistantTitle: 'DSH 助手',
+        assistantHint: '分配 · 下发 · 管理',
+        assistantWelcome: '你好，我是 DSH 助手。可以让我汇总状态、列出运行中会话、查看今日消耗、派发任务到指定目录，或调整预算。试试下面的快捷指令。',
+        assistantPlaceholder: '例如：派发任务 到 /data/proj：跑一次回归测试',
+        assistantSend: '发送',
+        assistantQuickStatus: '状态汇总',
+        assistantQuickRunning: '查看运行中',
+        assistantQuickUsage: '今天花了多少',
+        assistantQuickResume: '继续运行中的会话',
+        assistantQuickHelp: '帮助',
         settingsHint: '实例配置保存在本机 profile 的 dsh-fleet 条目里（由 dsh 配置编辑器写入 cordis.patch.yml），代理端口只监听 127.0.0.1。',
         pausing: '仅当前视图挂载 iframe，切走即卸载，避免多份 DSH 同时跑。',
       },
@@ -271,6 +283,18 @@ window.__ModuleLoader__.load({
         budgetDailyUsd: 'Daily budget (USD, 0 = none)',
         budgetWarnPct: 'Budget warning threshold (%)',
         usageSessionNote: 'Session tokens are lifetime totals; the range only selects sessions active inside it.',
+        assistantOpen: 'Assistant',
+        assistantClose: 'Hide assistant',
+        assistantTitle: 'DSH assistant',
+        assistantHint: 'assign · dispatch · manage',
+        assistantWelcome: 'Hi, I am the DSH assistant. Ask me for a fleet summary, running sessions, today\'s usage, dispatch a task to a folder, or adjust the budget.',
+        assistantPlaceholder: 'e.g. dispatch to /data/proj: run the regression suite',
+        assistantSend: 'Send',
+        assistantQuickStatus: 'Fleet summary',
+        assistantQuickRunning: 'Running sessions',
+        assistantQuickUsage: 'Usage today',
+        assistantQuickResume: 'Resume running',
+        assistantQuickHelp: 'Help',
         settingsHint: 'Instance config lives in this profile\'s dsh-fleet entry (written to cordis.patch.yml by the dsh config editor); proxy ports bind 127.0.0.1 only.',
         pausing: 'Only the active view keeps its iframe mounted, so multiple DSH apps never run at once.',
       },
@@ -393,7 +417,22 @@ window.__ModuleLoader__.load({
 .dsf-usage-cell-device,.dsf-usage-cell-model{font-size:10.5px;color:var(--dsw-alias-label-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dsf-usage-cell-title{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .dsf-usage-cell-tokens,.dsf-usage-cell-cost,.dsf-usage-cell-window{font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
-.dsf-cards{position:absolute;inset:0;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;align-content:start}
+
+.dsf-assistant{width:340px;flex:none;min-height:0;border-left:1px solid var(--dsw-alias-border-l1);display:flex;flex-direction:column;background:var(--dsw-specific-sidebar-fill)}
+.dsf-assistant-head{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--dsw-alias-border-l1)}
+.dsf-assistant-title{font-size:12.5px;font-weight:650;flex:none}
+.dsf-assistant-head .dsf-hint{flex:1;margin:0}
+.dsf-assistant-log{flex:1;min-height:0;overflow:auto;padding:12px 12px 6px;display:flex;flex-direction:column;gap:10px}
+.dsf-msg{max-width:94%;padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.dsf-msg.user{align-self:flex-end;background:rgba(52,211,153,.16);color:#eafff5}
+.dsf-msg.assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}
+.dsf-msg-action{margin-top:6px}
+.dsf-typing{opacity:.7;letter-spacing:2px}
+.dsf-assistant-chips{flex:none;display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px 0}
+.dsf-assistant-input{flex:none;display:flex;gap:6px;align-items:flex-end;padding:8px 12px 12px}
+.dsf-assistant-input textarea{flex:1;min-height:36px;max-height:110px;resize:none;background:var(--dsw-alias-bg-layer-2);color:inherit;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:7px 9px;font:inherit;font-size:12px}
+@media (max-width: 1180px){.dsf-assistant{width:300px}}
+.dsf-cards{position:absolute;inset:0;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;align-content:start}
 .dsf-card{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1);padding:12px 14px;min-width:0}
 .dsf-card-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .dsf-card-name{font-weight:600;font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -826,6 +865,19 @@ window.__ModuleLoader__.load({
       const [usageData, setUsageData] = useState(null)
       const [usageError, setUsageError] = useState(null)
       const [usageContext, setUsageContext] = useState(null)
+      const [assistantOpen, setAssistantOpen] = useState(() => {
+        try { return localStorage.getItem('dsh-fleet.assistantOpen') !== '0' } catch { return true }
+      })
+      const [assistantInput, setAssistantInput] = useState('')
+      const [assistantBusy, setAssistantBusy] = useState(false)
+      const [assistantMessages, setAssistantMessages] = useState(() => {
+        try {
+          const raw = localStorage.getItem('dsh-fleet.assistantLog')
+          const parsed = raw === null ? null : JSON.parse(raw)
+          return Array.isArray(parsed) ? parsed : []
+        } catch { return [] }
+      })
+      const assistantLog = useRef(null)
       const [showChildren, setShowChildren] = useState(() => {
         try { return localStorage.getItem('dsh-fleet.showChildren') === '1' } catch { return false }
       })
@@ -850,6 +902,41 @@ window.__ModuleLoader__.load({
         if (selectedId === null) return
         try { localStorage.setItem('dsh-fleet.selectedId', selectedId) } catch { /* private mode */ }
       }, [selectedId])
+
+      useEffect(() => {
+        try { localStorage.setItem('dsh-fleet.assistantOpen', assistantOpen ? '1' : '0') } catch { /* private mode */ }
+      }, [assistantOpen])
+
+      useEffect(() => {
+        try { localStorage.setItem('dsh-fleet.assistantLog', JSON.stringify(assistantMessages.slice(-60))) } catch { /* private mode */ }
+        const element = assistantLog.current
+        if (element !== null) element.scrollTop = element.scrollHeight
+      }, [assistantMessages, assistantBusy])
+
+      const sendAssistant = async (raw) => {
+        const message = String(raw ?? '').trim()
+        if (message === '' || assistantBusy) return
+        setAssistantInput('')
+        setAssistantMessages((list) => [...list, { role: 'user', text: message }])
+        setAssistantBusy(true)
+        try {
+          const value = await apiPost('fleet/assistant', { message })
+          if (!value.ok) throw new Error(value.error ?? 'assistant failed')
+          setAssistantMessages((list) => [...list, { role: 'assistant', text: value.reply, action: value.action ?? null }])
+          if (value.action?.type === 'open-session') {
+            const target = instances.find((item) => item.id === value.action.instanceId)
+            if (target !== undefined) {
+              setSelectedId(target.id)
+              openSessionFor(target, { sessionId: value.action.sessionId, title: '' })
+            }
+            setAggRefresh((current) => current + 1)
+          }
+        } catch (failure) {
+          setAssistantMessages((list) => [...list, { role: 'assistant', text: `出错了：${failure instanceof Error ? failure.message : String(failure)}` }])
+        } finally {
+          setAssistantBusy(false)
+        }
+      }
 
       const panelCapable = instances.filter((item) => typeof item.panelUrl === 'string' && item.panelUrl !== '' && item.panelProxyUrl !== null)
       const overview = usePoll('fleet/overview', 10000, view === 'overview' && instances.length > 0, 'overview')
@@ -1088,6 +1175,50 @@ window.__ModuleLoader__.load({
         if (element !== null && typeof element.requestFullscreen === 'function') void element.requestFullscreen()
       }
 
+      const assistantDock = assistantOpen ? h('aside', { className: 'dsf-assistant' },
+              h('div', { className: 'dsf-assistant-head' },
+                h('span', { className: 'dsf-assistant-title' }, tr('assistantTitle')),
+                h('span', { className: 'dsf-hint' }, tr('assistantHint')),
+                h('button', { className: 'dsf-btn', onClick: () => setAssistantOpen(false) }, '×')),
+              h('div', { className: 'dsf-assistant-log', ref: assistantLog },
+                assistantMessages.length === 0
+                  ? h('div', { className: 'dsf-msg assistant' }, tr('assistantWelcome'))
+                  : assistantMessages.map((message, index) => h('div', { key: index, className: `dsf-msg ${message.role}` },
+                    message.text,
+                    message.action?.type === 'open-session'
+                      ? h('div', { className: 'dsf-msg-action' },
+                        h('button', {
+                          className: 'dsf-btn small',
+                          onClick: () => {
+                            const target = instances.find((item) => item.id === message.action.instanceId)
+                            if (target !== undefined) {
+                              setSelectedId(target.id)
+                              openSessionFor(target, { sessionId: message.action.sessionId, title: '' })
+                            }
+                          },
+                        }, tr('openSession')))
+                      : null)),
+                assistantBusy ? h('div', { className: 'dsf-msg assistant dsf-typing' }, '…') : null),
+              h('div', { className: 'dsf-assistant-chips' },
+                ['assistantQuickStatus', 'assistantQuickRunning', 'assistantQuickUsage', 'assistantQuickResume', 'assistantQuickHelp'].map((key) => h('button', {
+                  key,
+                  className: 'dsf-chip',
+                  disabled: assistantBusy,
+                  onClick: () => void sendAssistant(tr(key)),
+                }, tr(key)))),
+              h('div', { className: 'dsf-assistant-input' },
+                h('textarea', {
+                  value: assistantInput,
+                  placeholder: tr('assistantPlaceholder'),
+                  rows: 2,
+                  onChange: (event) => setAssistantInput(event.target.value),
+                  onKeyDown: (event) => {
+                    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void sendAssistant(assistantInput) }
+                  },
+                }),
+                h('button', { className: 'dsf-btn primary', disabled: assistantBusy || assistantInput.trim() === '', onClick: () => void sendAssistant(assistantInput) }, tr('assistantSend'))))
+              : null
+
       return h('div', { className: 'dsf-root' },
         h('aside', { className: `dsf-aside${railCollapsed ? ' collapsed' : ''}` },
           h('div', { className: 'dsf-head' }, tr('title')),
@@ -1234,6 +1365,11 @@ window.__ModuleLoader__.load({
             h('div', { className: 'dsf-spacer' }),
             status.error ? h('span', { className: 'dsf-err' }, status.error) : null,
             h('button', {
+              className: `dsf-btn${assistantOpen ? ' primary' : ''}`,
+              onClick: () => setAssistantOpen((value) => !value),
+              title: tr('assistantHint'),
+            }, assistantOpen ? tr('assistantClose') : tr('assistantOpen')),
+            h('button', {
               className: 'dsf-btn',
               onClick: () => { setReloadKey((value) => value + 1); void status.reload(); if (allSelected) setAggRefresh((value) => value + 1) },
             }, tr('refresh')),
@@ -1346,7 +1482,8 @@ window.__ModuleLoader__.load({
                 await status.reload()
                 setAggRefresh((value) => value + 1)
               },
-            }) : null)))
+            }) : null)),
+            assistantDock)
     }
 
     /** Create a session on a chosen device with an optional folder and model. */
