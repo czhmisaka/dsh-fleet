@@ -3,10 +3,10 @@
     <linearGradient id="abg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#0b0d12"/><stop offset="1" stop-color="#0a0c11"/>
     </linearGradient>
-    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0L10 5L0 10z" fill="#5b6675"/>
     </marker>
-    <marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <marker id="ah-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0L10 5L0 10z" fill="#34d399"/>
     </marker>
     <pattern id="agrid" width="32" height="32" patternUnits="userSpaceOnUse">
@@ -19,79 +19,71 @@
   <rect x="0.5" y="0.5" width="1199" height="559" rx="17.5" fill="none" stroke="#232a35"/>
 
   <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
-    <text x="44" y="52" fill="#e8edf4" font-size="15" font-weight="700">dashboard / fleet architecture</text>
-    <text x="44" y="74" fill="#7d8794" font-size="11.5">browser → master → loopback proxies → remote DSH · read-only agents report back</text>
+    <text x="44" y="52" fill="#e8edf4" font-size="15" font-weight="700">dsh-fleet architecture</text>
+    <text x="44" y="74" fill="#7d8794" font-size="11.5">the browser only talks to loopback · the master aggregates · slaves stay read-only</text>
 
-    <!-- browser -->
-    <rect x="44" y="228" width="170" height="104" rx="12" fill="#10141b" stroke="#2a3140"/>
-    <text x="64" y="262" fill="#dfe6ef" font-size="13" font-weight="600">Browser</text>
-    <text x="64" y="284" fill="#7d8794" font-size="10.5">one panel / one origin</text>
-    <text x="64" y="304" fill="#7d8794" font-size="10.5">loopback traffic only</text>
+    <!-- Browser -->
+    <rect x="44" y="232" width="168" height="100" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="62" y="264" fill="#dfe6ef" font-size="13" font-weight="600">Browser</text>
+    <text x="62" y="286" fill="#7d8794" font-size="10.5">one panel / one origin</text>
+    <text x="62" y="306" fill="#7d8794" font-size="10.5">no remote credentials</text>
 
-    <!-- master -->
-    <rect x="284" y="216" width="206" height="128" rx="12" fill="#0f1d18" stroke="#1f6f55"/>
-    <text x="302" y="248" fill="#cfe8dd" font-size="13" font-weight="700">master DSH</text>
-    <text x="302" y="270" fill="#7fe7c4" font-size="10.5">/fleet/* routes</text>
-    <text x="302" y="290" fill="#7d8794" font-size="10.5">aggregation · SWR cache</text>
-    <text x="302" y="310" fill="#7d8794" font-size="10.5">credentials live here only</text>
-    <text x="302" y="330" fill="#7d8794" font-size="10.5">loopback proxies + viewer</text>
+    <!-- Master -->
+    <rect x="252" y="196" width="214" height="168" rx="12" fill="#0f1d18" stroke="#1f6f55"/>
+    <text x="270" y="226" fill="#cfe8dd" font-size="13" font-weight="700">master DSH</text>
+    <text x="270" y="248" fill="#7fe7c4" font-size="10.5">/fleet/* routes</text>
+    <text x="270" y="268" fill="#7d8794" font-size="10.5">aggregation · SWR cache</text>
+    <text x="270" y="288" fill="#7d8794" font-size="10.5">remote cookies in credentials</text>
+    <text x="270" y="308" fill="#7d8794" font-size="10.5">loopback proxies (DSH + panel)</text>
+    <text x="270" y="328" fill="#7d8794" font-size="10.5">in-panel viewer · usage</text>
+    <text x="270" y="348" fill="#7d8794" font-size="10.5">launch · budgets</text>
 
-    <!-- proxies -->
-    <rect x="560" y="118" width="196" height="88" rx="12" fill="#10141b" stroke="#2a3140"/>
-    <text x="578" y="148" fill="#dfe6ef" font-size="12" font-weight="600">loopback proxy</text>
-    <text x="578" y="169" fill="#7fe7c4" font-size="10.5">127.0.0.1:37801</text>
-    <text x="578" y="188" fill="#7d8794" font-size="10">own origin · injects remote cookie</text>
+    <!-- DSH proxy -->
+    <rect x="520" y="118" width="212" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="538" y="146" fill="#dfe6ef" font-size="12" font-weight="600">loopback proxy</text>
+    <text x="538" y="166" fill="#7fe7c4" font-size="10.5">127.0.0.1:37801</text>
+    <text x="538" y="184" fill="#7d8794" font-size="10">own origin · cookie injected</text>
+    <text x="538" y="200" fill="#7d8794" font-size="10">content-addressed asset cache</text>
 
-    <rect x="560" y="336" width="196" height="88" rx="12" fill="#10141b" stroke="#2a3140"/>
-    <text x="578" y="366" fill="#dfe6ef" font-size="12" font-weight="600">loopback proxy</text>
-    <text x="578" y="387" fill="#7fe7c4" font-size="10.5">127.0.0.1:37803</text>
-    <text x="578" y="406" fill="#7d8794" font-size="10">own origin · injects remote cookie</text>
+    <!-- panel proxy -->
+    <rect x="520" y="288" width="212" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="538" y="316" fill="#dfe6ef" font-size="12" font-weight="600">loopback proxy</text>
+    <text x="538" y="336" fill="#7fe7c4" font-size="10.5">127.0.0.1:37802</text>
+    <text x="538" y="354" fill="#7d8794" font-size="10">dashboard origin</text>
+    <text x="538" y="370" fill="#7d8794" font-size="10">embedded in its own process</text>
 
     <!-- remote DSH -->
-    <rect x="800" y="118" width="176" height="88" rx="12" fill="#10141b" stroke="#2a3140"/>
-    <text x="818" y="148" fill="#dfe6ef" font-size="12" font-weight="600">remote DSH</text>
-    <text x="818" y="169" fill="#8b96a5" font-size="10.5">:3080 (web UI + API)</text>
-    <text x="818" y="188" fill="#7d8794" font-size="10">host A</text>
+    <rect x="792" y="118" width="204" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="810" y="146" fill="#dfe6ef" font-size="12" font-weight="600">remote DSH</text>
+    <text x="810" y="166" fill="#8b96a5" font-size="10.5">:3080 · web UI + API</text>
+    <text x="810" y="184" fill="#b8a6f5" font-size="10">dsh-context plugin (optional)</text>
+    <text x="810" y="200" fill="#7d8794" font-size="10">sessions · models · usage</text>
 
-    <rect x="800" y="336" width="176" height="88" rx="12" fill="#10141b" stroke="#2a3140"/>
-    <text x="818" y="366" fill="#dfe6ef" font-size="12" font-weight="600">remote DSH</text>
-    <text x="818" y="387" fill="#8b96a5" font-size="10.5">:3080 (web UI + API)</text>
-    <text x="818" y="406" fill="#7d8794" font-size="10">host B</text>
-
-    <!-- dsh-context -->
-    <rect x="1020" y="128" width="146" height="68" rx="12" fill="#141922" stroke="#3b3357"/>
-    <text x="1036" y="156" fill="#c4b5fd" font-size="11.5" font-weight="600">dsh-context</text>
-    <text x="1036" y="178" fill="#8b96a5" font-size="10">usage · :40005</text>
-
-    <rect x="1020" y="346" width="146" height="68" rx="12" fill="#141922" stroke="#3b3357"/>
-    <text x="1036" y="374" fill="#c4b5fd" font-size="11.5" font-weight="600">dsh-context</text>
-    <text x="1036" y="396" fill="#8b96a5" font-size="10">usage · :40005</text>
+    <!-- remote panel -->
+    <rect x="792" y="288" width="204" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="810" y="316" fill="#dfe6ef" font-size="12" font-weight="600">remote dashboard</text>
+    <text x="810" y="336" fill="#8b96a5" font-size="10.5">:40005 · monitoring</text>
+    <text x="810" y="354" fill="#7d8794" font-size="10">CPU / memory / GPU</text>
+    <text x="810" y="370" fill="#7d8794" font-size="10">embedded or new tab</text>
 
     <!-- agent -->
-    <rect x="284" y="404" width="206" height="92" rx="12" fill="#10141b" stroke="#2a3140"/>
-    <text x="302" y="432" fill="#dfe6ef" font-size="12" font-weight="600">agent role (each slave)</text>
-    <text x="302" y="453" fill="#8b96a5" font-size="10.5">/fleet-agent/* · X-Fleet-Key</text>
-    <text x="302" y="472" fill="#7d8794" font-size="10">ping · info · sessions · panel</text>
+    <rect x="252" y="420" width="214" height="86" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="270" y="448" fill="#dfe6ef" font-size="12" font-weight="600">agent role (each slave)</text>
+    <text x="270" y="468" fill="#8b96a5" font-size="10.5">/fleet-agent/* · X-Fleet-Key</text>
+    <text x="270" y="486" fill="#7d8794" font-size="10">reads local sessions + panel</text>
 
     <!-- links -->
-    <line x1="214" y1="280" x2="280" y2="280" stroke="#34d399" stroke-width="1.8" marker-end="url(#arrow-accent)"/>
-    <text x="228" y="270" fill="#7fe7c4" font-size="9.5">same page</text>
+    <line x1="212" y1="282" x2="248" y2="282" stroke="#34d399" stroke-width="1.8" marker-end="url(#ah-g)"/>
 
-    <path d="M490 262 L560 190" stroke="#5b6675" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
-    <path d="M560 162 L490 278" stroke="#34d399" stroke-width="1.6" fill="none" marker-end="url(#arrow-accent)"/>
-    <path d="M490 300 L560 380" stroke="#5b6675" stroke-width="1.6" fill="none" marker-end="url(#arrow)"/>
-    <path d="M560 380 L490 306" stroke="#34d399" stroke-width="1.6" fill="none" marker-end="url(#arrow-accent)"/>
+    <path d="M466 248 L520 166" stroke="#5b6675" stroke-width="1.6" fill="none" marker-end="url(#ah)"/>
+    <path d="M466 316 L520 330" stroke="#5b6675" stroke-width="1.6" fill="none" marker-end="url(#ah)"/>
 
-    <line x1="756" y1="162" x2="798" y2="162" stroke="#5b6675" stroke-width="1.6" marker-end="url(#arrow)"/>
-    <line x1="756" y1="380" x2="798" y2="380" stroke="#5b6675" stroke-width="1.6" marker-end="url(#arrow)"/>
-    <line x1="976" y1="162" x2="1018" y2="162" stroke="#a78bfa" stroke-width="1.6" marker-end="url(#arrow)"/>
-    <line x1="976" y1="380" x2="1018" y2="380" stroke="#a78bfa" stroke-width="1.6" marker-end="url(#arrow)"/>
+    <line x1="732" y1="163" x2="788" y2="163" stroke="#5b6675" stroke-width="1.6" marker-end="url(#ah)"/>
+    <line x1="732" y1="333" x2="788" y2="333" stroke="#5b6675" stroke-width="1.6" marker-end="url(#ah)"/>
 
-    <line x1="387" y1="346" x2="387" y2="400" stroke="#5b6675" stroke-width="1.6" marker-end="url(#arrow)"/>
-    <text x="396" y="378" fill="#7d8794" font-size="9.5">/fleet-agent/*</text>
-    <path d="M490 450 C 640 450, 700 410, 798 380" stroke="#5b6675" stroke-width="1.4" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow)"/>
-    <text x="600" y="446" fill="#7d8794" font-size="9.5">read-only report</text>
+    <line x1="352" y1="364" x2="352" y2="416" stroke="#5b6675" stroke-width="1.6" marker-end="url(#ah)" marker-start="url(#ah)"/>
+    <text x="364" y="394" fill="#7d8794" font-size="9.5">/fleet-agent/* · read-only data</text>
 
-    <text x="44" y="528" fill="#6b7684" font-size="10">browser never receives remote credentials · proxies bind 127.0.0.1 only · embedded pages use a separate process</text>
+    <text x="44" y="534" fill="#6b7684" font-size="10">remote cookies never reach the browser · proxies bind 127.0.0.1 only · heavy embeds run in a separate process</text>
   </g>
 </svg>
