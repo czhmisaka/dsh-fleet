@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/banner.svg" alt="dsh-fleet" width="100%">
+<img src="docs/assets/banner.zh.svg" alt="dsh-fleet" width="100%">
 
 **一个面板，管好你所有的 DeepSeek Harness 实例。**
 多机会话 / 实时看板 / 跨设备用量与上下文压力 / 一键启动会话 —— 全部在 DSH 侧边栏里。
@@ -14,7 +14,7 @@
 
 </div>
 
-<img src="docs/assets/preview.svg" alt="dsh-fleet 界面预览" width="100%">
+<img src="docs/assets/preview.zh.svg" alt="dsh-fleet 界面预览" width="100%">
 
 ## 为什么是 dsh-fleet
 
@@ -100,7 +100,7 @@ PATCH'
 
 ## 架构
 
-<img src="docs/assets/architecture.svg" alt="dsh-fleet architecture" width="100%">
+<img src="docs/assets/architecture.zh.svg" alt="dsh-fleet architecture" width="100%">
 
 - 每个实例在 master 上都有**独立 origin**（`127.0.0.1:<port>`），localStorage / cookie 天然隔离。
 - 远端 cookie 由 master 代理注入，浏览器只拿到带一次性 key 的回环 URL。

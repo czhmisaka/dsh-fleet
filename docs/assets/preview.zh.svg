@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-label="dsh-fleet UI preview">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0c0e13"/><stop offset="1" stop-color="#0a0c10"/>
+    </linearGradient>
+    <radialGradient id="g2" cx="0.8" cy="0.1" r="0.7">
+      <stop offset="0" stop-color="#a78bfa" stop-opacity="0.16"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="640" rx="18" fill="url(#bg2)"/>
+  <rect width="1200" height="640" rx="18" fill="url(#g2)"/>
+  <rect x="0.5" y="0.5" width="1199" height="639" rx="17.5" fill="none" stroke="#252b36"/>
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
+    <!-- rail -->
+    <rect x="18" y="18" width="250" height="604" rx="12" fill="#10141b" stroke="#232a35"/>
+    <text x="36" y="48" fill="#e8edf4" font-size="14" font-weight="700">dsh-fleet</text>
+    <text x="36" y="68" fill="#7d8794" font-size="10.5">多机 DSH 面板</text>
+    <g font-size="11.5">
+      <rect x="30" y="84" width="226" height="40" rx="9" fill="none"/>
+      <circle cx="48" cy="104" r="4.5" fill="#34d399"/><text x="62" y="109" fill="#e8edf4">全部会话</text><text x="188" y="109" fill="#7d8794">1,630</text>
+      <rect x="30" y="132" width="226" height="52" rx="9" fill="#1a222e"/>
+      <circle cx="48" cy="152" r="4.5" fill="#34d399"/><text x="62" y="157" fill="#dfe6ef" font-weight="600">host-a</text>
+      <rect x="150" y="146" width="34" height="14" rx="7" fill="#14352a"/><text x="157" y="156.5" fill="#4ade80" font-size="9">在线</text>
+      <text x="62" y="172" fill="#7d8794" font-size="10">▶ 2 运行中 · 1268 会话 · 3ms</text>
+      <rect x="30" y="190" width="226" height="44" rx="9" fill="#0e1218"/>
+      <circle cx="48" cy="210" r="4.5" fill="#34d399"/><text x="62" y="215" fill="#dfe6ef" font-weight="600">host-b</text>
+      <rect x="150" y="202" width="34" height="14" rx="7" fill="#14352a"/><text x="157" y="212.5" fill="#4ade80" font-size="9">在线</text>
+      <text x="62" y="228" fill="#7d8794" font-size="10">▶ 1 运行中 · 6 会话 · 26ms</text>
+      <rect x="30" y="240" width="226" height="44" rx="9" fill="#0e1218"/>
+      <circle cx="48" cy="260" r="4.5" fill="#34d399"/><text x="62" y="265" fill="#dfe6ef" font-weight="600">host-c</text>
+      <rect x="150" y="252" width="34" height="14" rx="7" fill="#14352a"/><text x="157" y="262.5" fill="#4ade80" font-size="9">在线</text>
+      <text x="62" y="278" fill="#7d8794" font-size="10">50 会话 · 30ms · 看板</text>
+      <rect x="30" y="290" width="226" height="44" rx="9" fill="#0e1218"/>
+      <circle cx="48" cy="310" r="4.5" fill="#34d399"/><text x="62" y="315" fill="#dfe6ef" font-weight="600">host-d</text>
+      <rect x="150" y="302" width="34" height="14" rx="7" fill="#14352a"/><text x="157" y="312.5" fill="#4ade80" font-size="9">在线</text>
+      <text x="62" y="328" fill="#7d8794" font-size="10">306 会话 · 32ms · 看板</text>
+    </g>
+    <rect x="30" y="352" width="226" height="1" fill="#232a35"/>
+    <g font-size="10.5" fill="#8b96a5">
+      <text x="36" y="378">会话 · 268 / 1,268 · 2 运行中</text>
+      <rect x="34" y="390" width="150" height="24" rx="6" fill="#151b23"/><text x="44" y="406" fill="#6b7684" font-size="9.5">搜索会话…</text>
+      <rect x="192" y="390" width="62" height="24" rx="6" fill="#151b23"/><text x="200" y="406" fill="#8b96a5" font-size="9.5">只看运行中</text>
+    </g>
+    <g font-size="10.5">
+      <rect x="34" y="424" width="222" height="30" rx="7" fill="#10201a"/>
+      <circle cx="47" cy="439" r="3" fill="#34d399"/><text x="57" y="443" fill="#e8edf4">长会话：模型调研</text><text x="206" y="443" fill="#7d8794">2h</text>
+      <rect x="34" y="458" width="222" height="30" rx="7" fill="none"/>
+      <circle cx="47" cy="473" r="3" fill="#59636f"/><text x="57" y="477" fill="#c9d2dc">看板清理</text><text x="210" y="477" fill="#7d8794">1d</text>
+      <rect x="34" y="492" width="222" height="30" rx="7" fill="none"/>
+      <circle cx="47" cy="507" r="3" fill="#59636f"/><text x="57" y="511" fill="#c9d2dc">Token 审计</text><text x="210" y="511" fill="#7d8794">2d</text>
+      <rect x="34" y="526" width="222" height="30" rx="7" fill="none"/>
+      <circle cx="47" cy="541" r="3" fill="#59636f"/><text x="57" y="545" fill="#c9d2dc">部署流水线</text><text x="210" y="545" fill="#7d8794">3d</text>
+    </g>
+    <rect x="34" y="576" width="218" height="30" rx="8" fill="#17202b" stroke="#2b3544"/>
+    <text x="96" y="595" fill="#cfe8dd" font-size="11">＋ 启动会话</text>
+    <!-- main -->
+    <g>
+      <rect x="284" y="18" width="898" height="46" rx="10" fill="#10141b" stroke="#232a35"/>
+      <text x="308" y="46" fill="#dfe6ef" font-size="12.5">总览</text>
+      <rect x="372" y="28" width="52" height="24" rx="12" fill="#17202b" stroke="#2b3544"/><text x="386" y="45" fill="#cfe8dd" font-size="11.5">用量</text>
+      <text x="442" y="46" fill="#8b96a5" font-size="12.5">看板</text>
+      <rect x="1010" y="28" width="70" height="24" rx="7" fill="#17202b" stroke="#2b3544"/><text x="1026" y="45" fill="#cfe8dd" font-size="11">刷新</text>
+      <rect x="1090" y="28" width="76" height="24" rx="7" fill="#0f2a22" stroke="#1f6f55"/><text x="1104" y="45" fill="#7fe7c4" font-size="11">打开 DSH</text>
+      <!-- KPI row -->
+      <g>
+        <rect x="284" y="78" width="210" height="72" rx="12" fill="#10141b" stroke="#232a35"/><text x="300" y="100" fill="#7d8794" font-size="10.5">总 token</text><text x="300" y="130" fill="#f2f6fa" font-size="22" font-weight="700">801.8M</text>
+        <rect x="504" y="78" width="210" height="72" rx="12" fill="#10141b" stroke="#232a35"/><text x="520" y="100" fill="#7d8794" font-size="10.5">总费用</text><text x="520" y="130" fill="#f2f6fa" font-size="22" font-weight="700">$13.88</text>
+        <rect x="724" y="78" width="210" height="72" rx="12" fill="#10141b" stroke="#232a35"/><text x="740" y="100" fill="#7d8794" font-size="10.5">会话数</text><text x="740" y="130" fill="#f2f6fa" font-size="22" font-weight="700">1,630</text>
+        <rect x="944" y="78" width="222" height="72" rx="12" fill="#0f1d18" stroke="#1f5f4a"/><text x="960" y="100" fill="#7fe7c4" font-size="10.5">运行中</text><text x="960" y="130" fill="#7fe7c4" font-size="22" font-weight="700">3</text>
+      </g>
+      <!-- device cards -->
+      <g>
+        <rect x="284" y="166" width="432" height="150" rx="12" fill="#10141b" stroke="#232a35"/>
+        <circle cx="302" cy="186" r="4.5" fill="#34d399"/><text x="314" y="191" fill="#e8edf4" font-size="13" font-weight="600">host-a</text>
+        <rect x="372" y="180" width="42" height="15" rx="7.5" fill="#14352a"/><text x="379" y="191" fill="#4ade80" font-size="9">在线</text>
+        <text x="300" y="214" fill="#8b96a5" font-size="10.5">515.8M tokens · $8.82 · 缓存 97%</text>
+        <g>
+          <text x="300" y="240" fill="#7d8794" font-size="9.5">CPU</text><rect x="336" y="233" width="250" height="6" rx="3" fill="#232a35"/><rect x="336" y="233" width="90" height="6" rx="3" fill="#34d399"/>
+          <text x="600" y="242" fill="#c9d2dc" font-size="10">15%</text>
+          <text x="300" y="260" fill="#7d8794" font-size="9.5">内存</text><rect x="336" y="253" width="250" height="6" rx="3" fill="#232a35"/><rect x="336" y="253" width="210" height="6" rx="3" fill="#f87171"/>
+          <text x="600" y="262" fill="#c9d2dc" font-size="10">86%</text>
+          <text x="300" y="280" fill="#7d8794" font-size="9.5">磁盘</text><rect x="336" y="273" width="250" height="6" rx="3" fill="#232a35"/><rect x="336" y="273" width="110" height="6" rx="3" fill="#34d399"/>
+          <text x="600" y="282" fill="#c9d2dc" font-size="10">13%</text>
+          <text x="300" y="302" fill="#7d8794" font-size="9.5">GPU</text><rect x="336" y="295" width="250" height="6" rx="3" fill="#232a35"/><rect x="336" y="295" width="240" height="6" rx="3" fill="#f87171"/>
+          <text x="600" y="304" fill="#c9d2dc" font-size="10">96%</text>
+        </g>
+        <rect x="732" y="166" width="434" height="150" rx="12" fill="#10141b" stroke="#232a35"/>
+        <circle cx="750" cy="186" r="4.5" fill="#34d399"/><text x="762" y="191" fill="#e8edf4" font-size="13" font-weight="600">host-b</text>
+        <text x="748" y="214" fill="#8b96a5" font-size="10.5">232.8M tokens · $4.34 · 缓存 96%</text>
+        <g>
+          <text x="748" y="240" fill="#7d8794" font-size="9.5">CPU</text><rect x="784" y="233" width="230" height="6" rx="3" fill="#232a35"/><rect x="784" y="233" width="60" height="6" rx="3" fill="#34d399"/>
+          <text x="1030" y="242" fill="#c9d2dc" font-size="10">12%</text>
+          <text x="748" y="260" fill="#7d8794" font-size="9.5">内存</text><rect x="784" y="253" width="230" height="6" rx="3" fill="#232a35"/><rect x="784" y="253" width="90" height="6" rx="3" fill="#fbbf24"/>
+          <text x="1030" y="262" fill="#c9d2dc" font-size="10">39%</text>
+          <text x="748" y="280" fill="#7d8794" font-size="9.5">磁盘</text><rect x="784" y="273" width="230" height="6" rx="3" fill="#232a35"/><rect x="784" y="273" width="188" height="6" rx="3" fill="#fbbf24"/>
+          <text x="1030" y="282" fill="#c9d2dc" font-size="10">82%</text>
+        </g>
+      </g>
+      <!-- context section -->
+      <rect x="284" y="330" width="882" height="128" rx="12" fill="#10141b" stroke="#232a35"/>
+      <text x="300" y="352" fill="#e8edf4" font-size="12" font-weight="600">上下文压力 · 3</text>
+      <text x="424" y="352" fill="#7d8794" font-size="10">最后请求 / 窗口</text>
+      <g font-size="10.5">
+        <circle cx="300" cy="374" r="3.5" fill="#34d399"/><text x="310" y="378" fill="#c9d2dc">host-a · 长会话：模型调研</text>
+        <rect x="600" y="370" width="300" height="6" rx="3" fill="#232a35"/><rect x="600" y="370" width="127" height="6" rx="3" fill="#34d399"/><text x="912" y="378" fill="#c9d2dc">42.3%</text>
+        <circle cx="300" cy="400" r="3.5" fill="#fbbf24"/><text x="310" y="404" fill="#c9d2dc">host-b · 看板清理</text>
+        <rect x="600" y="396" width="300" height="6" rx="3" fill="#232a35"/><rect x="600" y="396" width="228" height="6" rx="3" fill="#fbbf24"/><text x="912" y="404" fill="#c9d2dc">76%</text>
+        <circle cx="300" cy="426" r="3.5" fill="#f87171"/><text x="310" y="430" fill="#c9d2dc">host-a · Token 审计</text>
+        <rect x="600" y="422" width="300" height="6" rx="3" fill="#232a35"/><rect x="600" y="422" width="272" height="6" rx="3" fill="#f87171"/><text x="912" y="430" fill="#c9d2dc">91%</text>
+      </g>
+      <!-- bottom -->
+      <rect x="284" y="472" width="882" height="118" rx="12" fill="#10141b" stroke="#232a35"/>
+      <text x="300" y="494" fill="#e8edf4" font-size="11.5" font-weight="600">会话消耗 · TOP 50</text>
+      <g font-size="9.5">
+        <text x="300" y="516" fill="#c9d2dc">host-a · 长会话：模型调研</text><text x="760" y="516" fill="#c9d2dc">320.7M</text><text x="880" y="516" fill="#c9d2dc">$12.40</text><text x="1000" y="516" fill="#7d8794">1.0M 窗口</text>
+        <text x="300" y="538" fill="#c9d2dc">host-b · 看板清理</text><text x="760" y="538" fill="#c9d2dc">182.4M</text><text x="880" y="538" fill="#c9d2dc">$6.10</text><text x="1000" y="538" fill="#7d8794">1.0M 窗口</text>
+        <text x="300" y="560" fill="#c9d2dc">host-a · Token 审计</text><text x="760" y="560" fill="#c9d2dc">96.3M</text><text x="880" y="560" fill="#c9d2dc">$3.20</text><text x="1000" y="560" fill="#7d8794">1.0M 窗口</text>
+      </g>
+    </g>
+  </g>
+</svg>

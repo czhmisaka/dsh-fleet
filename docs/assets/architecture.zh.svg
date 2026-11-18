@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-label="dsh-fleet architecture">
+  <defs>
+    <linearGradient id="abg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b0d12"/><stop offset="1" stop-color="#0a0c11"/>
+    </linearGradient>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#5b6675"/>
+    </marker>
+    <marker id="ah-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#34d399"/>
+    </marker>
+    <pattern id="agrid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="560" rx="18" fill="url(#abg)"/>
+  <rect width="1200" height="560" rx="18" fill="url(#agrid)"/>
+  <rect x="0.5" y="0.5" width="1199" height="559" rx="17.5" fill="none" stroke="#232a35"/>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
+    <text x="44" y="52" fill="#e8edf4" font-size="15" font-weight="700">dsh-fleet 架构</text>
+    <text x="44" y="74" fill="#7d8794" font-size="11.5">浏览器只访问回环 · master 负责聚合 · 从机保持只读</text>
+
+    <!-- Browser -->
+    <rect x="44" y="232" width="168" height="100" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="62" y="264" fill="#dfe6ef" font-size="13" font-weight="600">浏览器</text>
+    <text x="62" y="286" fill="#7d8794" font-size="10.5">一个面板 / 一个 origin</text>
+    <text x="62" y="306" fill="#7d8794" font-size="10.5">不接触远端凭据</text>
+
+    <!-- Master -->
+    <rect x="252" y="196" width="214" height="168" rx="12" fill="#0f1d18" stroke="#1f6f55"/>
+    <text x="270" y="226" fill="#cfe8dd" font-size="13" font-weight="700">master DSH</text>
+    <text x="270" y="248" fill="#7fe7c4" font-size="10.5">/fleet/* 路由</text>
+    <text x="270" y="268" fill="#7d8794" font-size="10.5">聚合 · SWR 缓存</text>
+    <text x="270" y="288" fill="#7d8794" font-size="10.5">远端 cookie 存凭据库</text>
+    <text x="270" y="308" fill="#7d8794" font-size="10.5">回环代理（DSH + 看板）</text>
+    <text x="270" y="328" fill="#7d8794" font-size="10.5">内嵌查看器 · 用量</text>
+    <text x="270" y="348" fill="#7d8794" font-size="10.5">启动会话 · 预算</text>
+
+    <!-- DSH proxy -->
+    <rect x="520" y="118" width="212" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="538" y="146" fill="#dfe6ef" font-size="12" font-weight="600">回环代理</text>
+    <text x="538" y="166" fill="#7fe7c4" font-size="10.5">127.0.0.1:37801</text>
+    <text x="538" y="184" fill="#7d8794" font-size="10">自己的 origin · 注入 cookie</text>
+    <text x="538" y="200" fill="#7d8794" font-size="10">内容寻址资源缓存</text>
+
+    <!-- panel proxy -->
+    <rect x="520" y="288" width="212" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="538" y="316" fill="#dfe6ef" font-size="12" font-weight="600">回环代理</text>
+    <text x="538" y="336" fill="#7fe7c4" font-size="10.5">127.0.0.1:37802</text>
+    <text x="538" y="354" fill="#7d8794" font-size="10">看板 origin</text>
+    <text x="538" y="370" fill="#7d8794" font-size="10">独立进程内嵌</text>
+
+    <!-- remote DSH -->
+    <rect x="792" y="118" width="204" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="810" y="146" fill="#dfe6ef" font-size="12" font-weight="600">远端 DSH</text>
+    <text x="810" y="166" fill="#8b96a5" font-size="10.5">:3080 · Web UI + API</text>
+    <text x="810" y="184" fill="#b8a6f5" font-size="10">dsh-context 插件（可选）</text>
+    <text x="810" y="200" fill="#7d8794" font-size="10">会话 · 模型 · 用量</text>
+
+    <!-- remote panel -->
+    <rect x="792" y="288" width="204" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="810" y="316" fill="#dfe6ef" font-size="12" font-weight="600">远端看板</text>
+    <text x="810" y="336" fill="#8b96a5" font-size="10.5">:40005 · 监控</text>
+    <text x="810" y="354" fill="#7d8794" font-size="10">CPU / 内存 / GPU</text>
+    <text x="810" y="370" fill="#7d8794" font-size="10">内嵌或新标签</text>
+
+    <!-- agent -->
+    <rect x="252" y="420" width="214" height="86" rx="12" fill="#10141b" stroke="#2a3140"/>
+    <text x="270" y="448" fill="#dfe6ef" font-size="12" font-weight="600">agent 角色（每台从机）</text>
+    <text x="270" y="468" fill="#8b96a5" font-size="10.5">/fleet-agent/* · X-Fleet-Key</text>
+    <text x="270" y="486" fill="#7d8794" font-size="10">读取本机会话 + 看板</text>
+
+    <!-- links -->
+    <line x1="212" y1="282" x2="248" y2="282" stroke="#34d399" stroke-width="1.8" marker-end="url(#ah-g)"/>
+
+    <path d="M466 248 L520 166" stroke="#5b6675" stroke-width="1.6" fill="none" marker-end="url(#ah)"/>
+    <path d="M466 316 L520 330" stroke="#5b6675" stroke-width="1.6" fill="none" marker-end="url(#ah)"/>
+
+    <line x1="732" y1="163" x2="788" y2="163" stroke="#5b6675" stroke-width="1.6" marker-end="url(#ah)"/>
+    <line x1="732" y1="333" x2="788" y2="333" stroke="#5b6675" stroke-width="1.6" marker-end="url(#ah)"/>
+
+    <line x1="352" y1="364" x2="352" y2="416" stroke="#5b6675" stroke-width="1.6" marker-end="url(#ah)" marker-start="url(#ah)"/>
+    <text x="364" y="394" fill="#7d8794" font-size="9.5">/fleet-agent/* · 只读数据</text>
+
+    <text x="44" y="534" fill="#6b7684" font-size="10">远端 cookie 不出 master · 代理只监听 127.0.0.1 · 重页面独立进程</text>
+  </g>
+</svg>

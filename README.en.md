@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/banner.svg" alt="dsh-fleet" width="100%">
+<img src="docs/assets/banner.en.svg" alt="dsh-fleet" width="100%">
 
 **One panel for every DeepSeek Harness instance you run.**
 Cross-host sessions / live dashboards / usage & context pressure / one-click launch — all inside the DSH sidebar.
@@ -13,7 +13,7 @@ Cross-host sessions / live dashboards / usage & context pressure / one-click lau
 
 </div>
 
-<img src="docs/assets/preview.svg" alt="dsh-fleet UI preview" width="100%">
+<img src="docs/assets/preview.en.svg" alt="dsh-fleet UI preview" width="100%">
 
 ## Why dsh-fleet
 
@@ -98,7 +98,7 @@ In the panel, rail bottom → **Add** with name, DSH URL, dashboard URL, SSH and
 
 ## Architecture
 
-<img src="docs/assets/architecture.svg" alt="dsh-fleet architecture" width="100%">
+<img src="docs/assets/architecture.en.svg" alt="dsh-fleet architecture" width="100%">
 
 - Every instance gets its own origin on the master (`127.0.0.1:<port>`), so localStorage/cookies are isolated.
 - The remote cookie is injected by the master proxy; the browser only receives loopback URLs carrying a one-time key.
