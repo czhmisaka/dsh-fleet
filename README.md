@@ -10,7 +10,7 @@
 [![Plugin](https://img.shields.io/badge/plugin-bundle-a78bfa?style=flat-square)](https://github.com/czhmisaka/dsh-fleet)
 [![PRs](https://img.shields.io/badge/PRs-welcome-ffb86c?style=flat-square)](https://github.com/czhmisaka/dsh-fleet/pulls)
 
-[**快速开始**](#快速开始) · [**功能**](#功能) · [**架构**](#架构) · [**配置**](#配置) · [**常见问题**](#常见问题) · [English](README.en.md)
+[**快速开始**](#快速开始) · [**功能**](#功能) · [**架构**](#架构) · [**配置**](#配置) · [**更新历史**](#更新历史) · [**常见问题**](#常见问题) · [English](README.en.md)
 
 </div>
 
@@ -189,6 +189,21 @@ budgetWarnPct: 80        # 告警阈值
 - [x] P2 上下文压力 + 预算告警
 - [ ] P3 30 天历史落盘、跨机对比、CSV 导出、webhook 通知
 - [ ] 更多实例健康指标与自动降级策略
+
+## 更新历史
+
+完整记录见 **[CHANGELOG.md](CHANGELOG.md)**（每个版本的变更、修复与升级提示）。最近版本快速索引：
+
+| 版本 | 日期 | 主题 |
+|---|---|---|
+| [v0.5.1](CHANGELOG.md#v0-5-1) | 2026-11-18 | 左右侧边栏可拖动调宽 |
+| [v0.5.0](CHANGELOG.md#v0-5-0) | 2026-11-18 | 右侧助手改为内嵌 master 原生 DSH 会话 |
+| [v0.4.0](CHANGELOG.md#v0-4-0) | 2026-11-18 | 助手升级为真实 DSH 会话（fleetctl 派发） |
+| [v0.3.0](CHANGELOG.md#v0-3-0) | 2026-11-18 | 右侧可折叠 DSH 助手（规则版） |
+| [v0.2.2](CHANGELOG.md#v0-2-2) | 2026-11-18 | 用量范围数字与部分费用修复 |
+| [v0.2.1](CHANGELOG.md#v0-2-1) | 2026-11-18 | 上下文压力 + 预算告警 |
+| [v0.2.0](CHANGELOG.md#v0-2-0) | 2026-11-18 | 多机用量视图 |
+| [v0.1.11 及更早](CHANGELOG.md#v0-1-11) | 2026-11-18 | 首个公开版本与早期迭代 |
 
 ## 贡献
 

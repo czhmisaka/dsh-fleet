@@ -9,7 +9,7 @@ Cross-host sessions / live dashboards / usage & context pressure / one-click lau
 [![License](https://img.shields.io/badge/license-MIT-22d3ee?style=flat-square)](LICENSE)
 [![Plugin](https://img.shields.io/badge/plugin-bundle-a78bfa?style=flat-square)](https://github.com/czhmisaka/dsh-fleet)
 
-[**Quick start**](#quick-start) · [**Features**](#features) · [**Architecture**](#architecture) · [**Config**](#configuration) · [**FAQ**](#faq) · [中文](README.md)
+[**Quick start**](#quick-start) · [**Features**](#features) · [**Architecture**](#architecture) · [**Config**](#configuration) · [**Changelog**](#changelog) · [**FAQ**](#faq) · [中文](README.md)
 
 </div>
 
