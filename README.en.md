@@ -17,13 +17,16 @@ Cross-host sessions / live dashboards / usage & context pressure / one-click lau
 
 ## Why dsh-fleet
 
-Once DSH grows from one machine to a Mac plus a GPU server plus a mini-PC, three things get painful:
+DSH is designed around one machine and one workspace. Once your work spans several hosts, the real cost is not extra tabs — it is that **context and state get fragmented**:
 
-- **Tab-hopping**: every host has its own :3080 — sessions, dashboards and models live apart.
-- **No overview**: is that job running, and on which host?
-- **No cost picture**: tokens, cost, cache hit and context windows are scattered across per-host plugins.
+- **Can't pick up where you left off**: to continue a session on another host you must remember which host it was, open its :3080, and find the session again — by then the thread is lost.
+- **Can't see what's running**: which host is busy, for how long, whether it is stuck — you have to check each one.
+- **Can't tell what it costs**: tokens, spend, cache hit and context occupancy live inside each host's own plugin; you only notice the bill later.
+- **Slow to start**: creating a session means logging into the right host, picking a folder and a model, a dozen times a day.
 
-dsh-fleet pulls those into one sidebar page: **one master aggregates, slaves only report**, and the browser only ever talks to loopback ports on the master.
+dsh-fleet collects all of it into one sidebar page: **one master aggregates, every slave only reports**. Sessions, dashboards, usage, context pressure and launching live in one place, and the browser only ever talks to loopback ports on the master.
+
+Three design rules: **don't touch the slaves** (a read-only agent is enough), **credentials never leave the master**, and **heavy pages never block the panel** (separate iframe process + background prewarm).
 
 ## Features
 
