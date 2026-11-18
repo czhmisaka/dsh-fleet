@@ -15,6 +15,9 @@
 import z from '@deepseek-ai/schemastery'
 import { createRequire } from 'node:module'
 import { randomBytes, randomUUID } from 'node:crypto'
+import { promises as fs } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { homedir, hostname } from 'node:os'
 import { join } from 'node:path'
@@ -27,7 +30,7 @@ import {
 export const name = 'dsh-fleet'
 
 /** Host services used by both roles. */
-export const inject = ['webServer', 'connection', 'settings', 'credentials', 'timer']
+export const inject = ['webServer', 'connection', 'settings', 'credentials', 'timer', 'sessionController']
 
 /** Whether a session carries a human title (subagent sessions may only have a label). */
 function sessionHasTitle(item) {
@@ -121,6 +124,10 @@ class Fleet {
       this.log(`settings.describe failed: ${macMessage(error)}`)
     }
     return this.baseConfig
+  }
+
+  get assistantDir() {
+    return path.join(os.homedir(), '.dsh', 'fleet-assistant')
   }
 
   start() {
@@ -824,6 +831,218 @@ class Fleet {
     return out
   }
 
+  /** Read or create the local control key used by the fleetctl helper. */
+  async ensureCtlKey() {
+    const file = path.join(this.assistantDir, 'ctl.json')
+    try {
+      const parsed = JSON.parse(await fs.readFile(file, 'utf8'))
+      if (typeof parsed.key === 'string' && parsed.key.length >= 32) return parsed.key
+    } catch {
+      // missing or unreadable: regenerate below
+    }
+    const key = randomBytes(24).toString('hex')
+    await fs.writeFile(file, JSON.stringify({ key }, null, 2), { mode: 0o600 })
+    return key
+  }
+
+  /** Make sure the dispatcher workspace (AGENTS.md + fleetctl + ctl.json) exists. */
+  async ensureAssistantWorkspace() {
+    await fs.mkdir(this.assistantDir, { recursive: true })
+    const key = await this.ensureCtlKey()
+    const port = this.ctx.webServer.port
+    if (typeof port !== 'number') throw new Error('webServer is not listening yet')
+    const host = this.ctx.webServer.host === '::1' ? '[::1]' : this.ctx.webServer.host
+    const ctl = { key, baseUrl: `http://${host}:${port}` }
+    await fs.writeFile(path.join(this.assistantDir, 'ctl.json'), JSON.stringify(ctl, null, 2), { mode: 0o600 })
+
+    const agents = [
+      '# Fleet 调度员',
+      '',
+      '你是 dsh-fleet 的调度助手，运行在 master 上。你的职责是理解用户需求，把它拆解成任务，**优先派发给被管理的实例**去执行，并跟踪、汇总、回报。',
+      '',
+      '## 工具',
+      '',
+      '在 Bash 里使用本目录的 `./fleetctl`（Node 脚本，自带访问凭据）：',
+      '',
+      '- `./fleetctl state` 查看所有实例状态',
+      '- `./fleetctl running` 查看正在运行的会话',
+      '- `./fleetctl sessions [--instance <id>]` 列出会话',
+      '- `./fleetctl usage` 查看今日用量',
+      '- `./fleetctl dispatch --cwd <目录> [--instance <id>] [--prompt <任务>]` 派发会话（默认选最空闲在线实例）',
+      '- `./fleetctl prompt --instance <id> --session <id> --prompt <文本>` 继续/追加指令',
+      '- `./fleetctl tail --instance <id> --session <id> [--count 20]` 看会话最近输出',
+      '',
+      '## 行为准则',
+      '',
+      '1. 先判断任务适合在哪台实例执行（看 state 的在线/运行中/负载），用 dispatch 下发，而不是在本机直接干活。',
+      '2. 用户问“某任务怎么样了”时，用 sessions/tail 查真实状态，不要猜。',
+      '3. 回复精简：先说结论，再给设备、会话、耗时、链接要点。',
+      '4. 需要更多信息时直接问用户，不要编造。',
+      '5. 不要执行破坏性命令；不要改 master 上无关的文件。',
+      '',
+    ].join('\n')
+    await fs.writeFile(path.join(this.assistantDir, 'AGENTS.md'), agents)
+
+    const ctlScript = `#!/usr/bin/env node
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const here = dirname(fileURLToPath(import.meta.url))
+const ctl = JSON.parse(readFileSync(join(here, 'ctl.json'), 'utf8'))
+const args = process.argv.slice(2)
+const command = args.shift() ?? 'state'
+const flags = {}
+for (let index = 0; index < args.length; index += 1) {
+  const arg = args[index]
+  if (arg.startsWith('--')) {
+    const key = arg.slice(2)
+    const next = args[index + 1]
+    if (next !== undefined && !next.startsWith('--')) { flags[key] = next; index += 1 } else { flags[key] = 'true' }
+  }
+}
+async function call(method, route, body) {
+  const response = await fetch(ctl.baseUrl + route, {
+    method,
+    headers: { 'x-fleet-ctl': ctl.key, 'content-type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+  const text = await response.text()
+  let value
+  try { value = JSON.parse(text) } catch { value = text }
+  if (!response.ok) {
+    console.error(JSON.stringify(value, null, 2))
+    process.exit(1)
+  }
+  return value
+}
+const query = new URLSearchParams()
+if (flags.instance) query.set('instanceId', flags.instance)
+if (flags.session) query.set('sessionId', flags.session)
+if (flags.count) query.set('count', flags.count)
+switch (command) {
+  case 'state': console.log(JSON.stringify(await call('GET', '/fleet/ctl/state'), null, 2)); break
+  case 'running': console.log(JSON.stringify(await call('GET', '/fleet/ctl/running'), null, 2)); break
+  case 'sessions': console.log(JSON.stringify(await call('GET', '/fleet/ctl/sessions?' + query.toString()), null, 2)); break
+  case 'usage': console.log(JSON.stringify(await call('GET', '/fleet/ctl/usage'), null, 2)); break
+  case 'tail': console.log(JSON.stringify(await call('GET', '/fleet/ctl/tail?' + query.toString()), null, 2)); break
+  case 'dispatch': console.log(JSON.stringify(await call('POST', '/fleet/ctl/dispatch', { cwd: flags.cwd ?? '', prompt: flags.prompt ?? '', instanceId: flags.instance }), null, 2)); break
+  case 'prompt': console.log(JSON.stringify(await call('POST', '/fleet/ctl/prompt', { instanceId: flags.instance, sessionId: flags.session, text: flags.prompt ?? flags.text ?? '' }), null, 2)); break
+  default: console.error('unknown command: ' + command); process.exit(2)
+}
+`
+    await fs.writeFile(path.join(this.assistantDir, 'fleetctl'), ctlScript, { mode: 0o755 })
+    return key
+  }
+
+  /** Reuse or create the dedicated dispatcher session on this master. */
+  async ensureAssistantSession(controller) {
+    await this.ensureAssistantWorkspace()
+    const stateFile = path.join(this.assistantDir, 'session.json')
+    try {
+      const parsed = JSON.parse(await fs.readFile(stateFile, 'utf8'))
+      const listed = await controller.list({}, new AbortController().signal)
+      if (typeof parsed.sessionId === 'string' && parsed.sessionId !== '' && (listed.items ?? []).some((item) => item.sessionId === parsed.sessionId)) {
+        return parsed.sessionId
+      }
+    } catch {
+      // missing session: create below
+    }
+    const created = await controller.create({ cwd: this.assistantDir }, new AbortController().signal)
+    const sessionId = created?.sessionId
+    if (typeof sessionId !== 'string' || sessionId === '') throw new Error('assistant session/create returned no sessionId')
+    await fs.writeFile(stateFile, JSON.stringify({ sessionId }, null, 2))
+    return sessionId
+  }
+
+  /** Flatten assistant text parts from one history record. */
+  assistantRecordText(record) {
+    const event = record?.event ?? record
+    if (event?.type !== 'assistant/message') return ''
+    const message = event?.data?.message
+    const parts = Array.isArray(message?.content) ? message.content : []
+    return parts.filter((part) => part?.type === 'text' && typeof part.text === 'string').map((part) => part.text).join('')
+  }
+
+  /** Send one message to the dispatcher session and wait for its assistant output. */
+  async askDispatcher(message) {
+    const controller = this.ctx.get('sessionController')
+    if (controller === undefined) throw new Error('sessionController unavailable')
+    const sessionId = await this.ensureAssistantSession(controller)
+    const signal = new AbortController().signal
+    let cursor = 0
+    try {
+      const page = await controller.page({ address: { kind: 'session', sessionId }, maxMessages: 1 }, signal)
+      cursor = Number(page?.cursor) || 0
+    } catch {
+      cursor = 0
+    }
+    await controller.prompt({
+      sessionId,
+      requestId: randomUUID(),
+      mode: 'queue',
+      content: [{ type: 'text', text: message }],
+    }, signal)
+
+    const deadline = Date.now() + 300000
+    let seen = cursor
+    let text = ''
+    let started = false
+    let idleStreak = 0
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 1200))
+      try {
+        const page = await controller.page({ address: { kind: 'session', sessionId }, maxMessages: 50 }, signal)
+        const events = (page?.records ?? []).map((record) => record?.event ?? record).filter((event) => typeof event?.seq === 'number' && event.seq > seen)
+        for (const event of events) {
+          started = true
+          if (event.type === 'assistant/message') {
+            const chunk = this.assistantRecordText(event)
+            if (chunk !== '') text += chunk
+          }
+          seen = Math.max(seen, event.seq)
+        }
+        const state = await controller.state({ sessionId }, signal)
+        if (state?.running === true) { started = true; idleStreak = 0 } else if (started) {
+          idleStreak += 1
+          if (idleStreak >= 2) break
+        }
+      } catch {
+        // transient read errors: keep polling until the deadline
+      }
+    }
+    if (text === '') {
+      try {
+        const page = await controller.page({ address: { kind: 'session', sessionId }, maxMessages: 5 }, signal)
+        const events = (page?.records ?? []).map((record) => record?.event ?? record).filter((event) => event?.type === 'assistant/message')
+        text = events.map((event) => this.assistantRecordText(event)).filter((chunk) => chunk !== '').join('')
+      } catch { /* keep empty */ }
+    }
+    return { sessionId, text: text.trim() }
+  }
+
+  /** Dispatch one task to the least-loaded online host (shared by assistant + ctl routes). */
+  async dispatchTask({ cwd = '', prompt = '', instanceId = '' }) {
+    const candidates = this.dispatchCandidates()
+    if (candidates.length === 0) throw new Error('没有在线且已授权的实例可以派发')
+    const named = instanceId === '' ? null : candidates.find(({ runtime }) => runtime.state.instance.id === instanceId)
+    const target = named ?? candidates[0]
+    const instance = target.runtime.state.instance
+    const created = await callRemote(instance.dshUrl, target.runtime.state.cookie, 'session/create', {
+      request: cwd === '' ? {} : { cwd },
+    })
+    const sessionId = created?.sessionId
+    if (typeof sessionId !== 'string' || sessionId === '') throw new Error('session/create returned no sessionId')
+    if (prompt !== '') {
+      await callRemote(instance.dshUrl, target.runtime.state.cookie, 'session/prompt', {
+        request: { requestId: randomUUID(), sessionId, mode: 'queue', content: [{ type: 'text', text: prompt }] },
+      })
+    }
+    this.sessionsFullCache.delete(instance.id)
+    for (const key of [...this.sessionsCache.keys()]) if (key.startsWith(`${instance.id}|`)) this.sessionsCache.delete(key)
+    return { instanceId: instance.id, instanceName: instance.name || instance.id, sessionId }
+  }
+
   /** Deterministic fleet assistant: understand a few intents and execute them. */
   async assistantReply(message) {
     const text = String(message ?? '').trim()
@@ -1099,6 +1318,110 @@ class Fleet {
         }
       },
     })
+    const ctlGuard = async (req, res) => {
+      const address = req.socket?.remoteAddress ?? ''
+      const loopback = address === '::1' || address.startsWith('127.') || address === '::ffff:127.0.0.1'
+      if (!loopback) { json(res, { ok: false, error: 'loopback only' }, 403); return null }
+      let key = ''
+      try { key = await this.ensureCtlKey() } catch { key = '' }
+      if (key === '' || req.headers['x-fleet-ctl'] !== key) { json(res, { ok: false, error: 'bad ctl key' }, 403); return null }
+      return key
+    }
+    const ctlRoute = (path, handler) => register({
+      kind: 'exact',
+      path,
+      handler: async (req, res) => {
+        if (await ctlGuard(req, res) === null) return
+        try { await handler(req, res) } catch (error) { json(res, { ok: false, error: macMessage(error) }, 400) }
+      },
+    })
+    ctlRoute('/fleet/ctl/state', async (req, res) => {
+      if (req.method !== 'GET') { json(res, { ok: false, error: 'method not allowed' }, 405); return }
+      const snapshot = this.statusSnapshot()
+      json(res, {
+        ok: true,
+        instances: snapshot.instances.map((instance) => ({
+          id: instance.id, name: instance.name, online: instance.online, authed: instance.authed,
+          latencyMs: instance.latencyMs, sessions: instance.sessions, panel: instance.panel,
+        })),
+        running: await this.runningSessions(),
+      })
+    })
+    ctlRoute('/fleet/ctl/running', async (req, res) => {
+      json(res, { ok: true, running: await this.runningSessions() })
+    })
+    ctlRoute('/fleet/ctl/sessions', async (req, res) => {
+      const url = new URL(req.url, 'http://127.0.0.1')
+      const instanceId = url.searchParams.get('instanceId') ?? ''
+      const out = []
+      for (const runtime of this.runtimes.values()) {
+        if (instanceId !== '' && runtime.state.instance.id !== instanceId) continue
+        if (!runtime.state.authed) continue
+        try {
+          const items = await this.fullSessions(runtime)
+          for (const item of items.slice(0, 100)) {
+            out.push({
+              instanceId: runtime.state.instance.id,
+              instanceName: runtime.state.instance.name || runtime.state.instance.id,
+              sessionId: item.sessionId,
+              title: item.projections?.values?.title ?? '',
+              running: item.running === true,
+              origin: item.origin ?? 'ordinary',
+              cwd: item.cwd ?? null,
+              updatedAt: item.projections?.values?.updatedAt ?? null,
+            })
+          }
+        } catch { /* skip one host */ }
+      }
+      json(res, { ok: true, sessions: out })
+    })
+    ctlRoute('/fleet/ctl/usage', async (req, res) => {
+      const cached = this.usageCache.get('today')
+      if (cached === undefined) await this.refreshUsage('today')
+      json(res, { ok: true, usage: this.usageCache.get('today')?.value ?? null })
+    })
+    ctlRoute('/fleet/ctl/tail', async (req, res) => {
+      const url = new URL(req.url, 'http://127.0.0.1')
+      const instanceId = url.searchParams.get('instanceId') ?? ''
+      const sessionId = url.searchParams.get('sessionId') ?? ''
+      const count = Math.max(1, Math.min(100, Number(url.searchParams.get('count') ?? 20) || 20))
+      const runtime = this.runtimes.get(instanceId)
+      if (runtime === undefined) { json(res, { ok: false, error: 'unknown instance' }, 404); return }
+      const page = await callRemote(runtime.state.instance.dshUrl, runtime.state.cookie, 'session/page', {
+        request: { address: { kind: 'session', sessionId }, maxMessages: count },
+      })
+      const records = (page?.records ?? []).map((record) => {
+        const event = record?.event ?? record
+        const type = event?.type ?? ''
+        const message = event?.data?.message
+        const parts = Array.isArray(message?.content) ? message.content : []
+        const text = parts.filter((part) => part?.type === 'text' && typeof part.text === 'string').map((part) => part.text).join('')
+        return { seq: event?.seq ?? 0, role: type === 'assistant/message' ? 'assistant' : type === 'user/message' ? 'user' : type, text }
+      }).filter((record) => record.text !== '')
+      json(res, { ok: true, sessionId, records })
+    })
+    ctlRoute('/fleet/ctl/dispatch', async (req, res) => {
+      if (req.method !== 'POST') { json(res, { ok: false, error: 'method not allowed' }, 405); return }
+      const body = JSON.parse(await readBody(req))
+      const result = await this.dispatchTask({ cwd: String(body.cwd ?? ''), prompt: String(body.prompt ?? ''), instanceId: String(body.instanceId ?? '') })
+      json(res, { ok: true, ...result })
+    })
+    ctlRoute('/fleet/ctl/prompt', async (req, res) => {
+      if (req.method !== 'POST') { json(res, { ok: false, error: 'method not allowed' }, 405); return }
+      const body = JSON.parse(await readBody(req))
+      const runtime = this.runtimes.get(String(body.instanceId ?? ''))
+      if (runtime === undefined) { json(res, { ok: false, error: 'unknown instance' }, 404); return }
+      await callRemote(runtime.state.instance.dshUrl, runtime.state.cookie, 'session/prompt', {
+        request: {
+          requestId: randomUUID(),
+          sessionId: String(body.sessionId ?? ''),
+          mode: 'queue',
+          content: [{ type: 'text', text: String(body.text ?? '') }],
+        },
+      })
+      json(res, { ok: true })
+    })
+
     register({
       kind: 'exact',
       path: '/fleet/assistant',
@@ -1108,7 +1431,16 @@ class Fleet {
         this.lastClientAt = Date.now()
         try {
           const body = JSON.parse(await readBody(req))
-          const result = await this.assistantReply(body.message)
+          const message = String(body.message ?? '').trim()
+          if (message === '') throw new Error('message is empty')
+          let result
+          try {
+            const answered = await this.askDispatcher(message)
+            result = { reply: answered.text === '' ? '（助手这一轮没有返回文本，可以再问一次或让我打开完整会话。）' : answered.text, assistantSessionId: answered.sessionId }
+          } catch (error) {
+            this.log(`assistant dispatcher failed, falling back to rules: ${macMessage(error)}`)
+            result = await this.assistantReply(message)
+          }
           json(res, { ok: true, ...result })
         } catch (error) {
           json(res, { ok: false, error: macMessage(error) }, 400)

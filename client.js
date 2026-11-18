@@ -145,7 +145,7 @@ window.__ModuleLoader__.load({
         assistantClose: '收起助手',
         assistantTitle: 'DSH 助手',
         assistantHint: '分配 · 下发 · 管理',
-        assistantWelcome: '你好，我是 DSH 助手。可以让我汇总状态、列出运行中会话、查看今日消耗、派发任务到指定目录，或调整预算。试试下面的快捷指令。',
+        assistantWelcome: '你好，我是 DSH 调度助手。我背后是一个真实的 DSH 会话，拥有完整的 DSH 能力（读写文件、跑命令、查会话、联网等），并且会优先把任务派发给被管理的实例去执行。可以直接说需求，比如：看一下漫剧任务进度、把回归测试派到 X99、总结今天所有实例在做什么。',
         assistantPlaceholder: '例如：派发任务 到 /data/proj：跑一次回归测试',
         assistantSend: '发送',
         assistantQuickStatus: '状态汇总',
@@ -287,7 +287,7 @@ window.__ModuleLoader__.load({
         assistantClose: 'Hide assistant',
         assistantTitle: 'DSH assistant',
         assistantHint: 'assign · dispatch · manage',
-        assistantWelcome: 'Hi, I am the DSH assistant. Ask me for a fleet summary, running sessions, today\'s usage, dispatch a task to a folder, or adjust the budget.',
+        assistantWelcome: 'Hi, I am the fleet dispatcher. Behind me is a real DSH session with the full DSH toolbox (files, shell, sessions, web), and it prefers dispatching work to managed hosts. Just describe the goal — e.g. check the comic-drama task, dispatch a regression run to a host, or summarize what every host is doing.',
         assistantPlaceholder: 'e.g. dispatch to /data/proj: run the regression suite',
         assistantSend: 'Send',
         assistantQuickStatus: 'Fleet summary',
@@ -424,12 +424,22 @@ window.__ModuleLoader__.load({
 .dsf-assistant-head .dsf-hint{flex:1;margin:0}
 .dsf-assistant-log{flex:1;min-height:0;overflow:auto;padding:12px 12px 6px;display:flex;flex-direction:column;gap:10px}
 .dsf-msg{max-width:94%;padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+
+.dsf-msg h4,.dsf-msg h5{margin:2px 0 4px;font-size:12px;line-height:1.5}
+.dsf-msg p{margin:0 0 6px}
+.dsf-msg p:last-child{margin-bottom:0}
+.dsf-msg ul{margin:2px 0 6px;padding-left:16px}
+.dsf-msg li{margin:1px 0}
+.dsf-msg code{background:rgba(255,255,255,.08);border-radius:4px;padding:0 3px;font-size:11px}
+.dsf-msg pre{background:rgba(0,0,0,.35);border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:8px;overflow:auto;margin:4px 0}
+.dsf-msg pre code{background:none;padding:0}
+.dsf-msg a{color:#7fe7c4}
 .dsf-msg.user{align-self:flex-end;background:rgba(52,211,153,.16);color:#eafff5}
 .dsf-msg.assistant{align-self:flex-start;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}
 .dsf-msg-action{margin-top:6px}
 .dsf-typing{opacity:.7;letter-spacing:2px}
 .dsf-assistant-chips{flex:none;display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px 0}
-.dsf-assistant-input{flex:none;display:flex;gap:6px;align-items:flex-end;padding:8px 12px 12px}
+.dsf-assistant-input{flex:none;display:flex;gap:6px;align-items:flex-end;padding:8px 12px 52px}
 .dsf-assistant-input textarea{flex:1;min-height:36px;max-height:110px;resize:none;background:var(--dsw-alias-bg-layer-2);color:inherit;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:7px 9px;font:inherit;font-size:12px}
 @media (max-width: 1180px){.dsf-assistant{width:300px}}
 .dsf-cards{position:absolute;inset:0;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;align-content:start}
@@ -846,6 +856,64 @@ window.__ModuleLoader__.load({
           : h(React.Fragment, null, totalsBlock, devicesBlock, contextBlock, modelsBlock, sessionsBlock))
     }
 
+    /** Minimal safe markdown for assistant replies: bold, code, links, lists, headings. */
+    function renderInline(text, keyPrefix) {
+      const nodes = []
+      const pattern = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g
+      let last = 0
+      let match
+      let index = 0
+      while ((match = pattern.exec(text)) !== null) {
+        if (match.index > last) nodes.push(text.slice(last, match.index))
+        const token = match[0]
+        if (token.startsWith('**') && token.endsWith('**')) nodes.push(h('b', { key: `${keyPrefix}-b-${index}` }, token.slice(2, -2)))
+        else if (token.startsWith('`') && token.endsWith('`')) nodes.push(h('code', { key: `${keyPrefix}-c-${index}` }, token.slice(1, -1)))
+        else {
+          const link = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(token)
+          if (link !== null) nodes.push(h('a', { key: `${keyPrefix}-a-${index}`, href: link[2], target: '_blank', rel: 'noreferrer' }, link[1]))
+          else nodes.push(token)
+        }
+        last = match.index + token.length
+        index += 1
+      }
+      if (last < text.length) nodes.push(text.slice(last))
+      return nodes
+    }
+
+    function renderAssistantMarkdown(text) {
+      const blocks = String(text ?? '').split(/```/)
+      const out = []
+      blocks.forEach((block, blockIndex) => {
+        if (blockIndex % 2 === 1) {
+          out.push(h('pre', { key: `pre-${blockIndex}` }, h('code', null, block.replace(/^[a-zA-Z0-9]+\n/, ''))))
+          return
+        }
+        const lines = block.split('\n')
+        let listItems = []
+        const flushList = (key) => {
+          if (listItems.length === 0) return
+          out.push(h('ul', { key }, listItems))
+          listItems = []
+        }
+        lines.forEach((line, lineIndex) => {
+          const key = `blk-${blockIndex}-${lineIndex}`
+          const trimmed = line.trim()
+          if (trimmed === '') { flushList(`list-${key}`); return }
+          if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+            listItems.push(h('li', { key }, renderInline(trimmed.slice(2), key)))
+            return
+          }
+          flushList(`list-${key}`)
+          if (trimmed.startsWith('### ')) out.push(h('h5', { key }, renderInline(trimmed.slice(4), key)))
+          else if (trimmed.startsWith('## ')) out.push(h('h4', { key }, renderInline(trimmed.slice(3), key)))
+          else if (trimmed.startsWith('# ')) out.push(h('h4', { key }, renderInline(trimmed.slice(2), key)))
+          else out.push(h('p', { key }, renderInline(line, key)))
+        })
+        flushList(`list-end-${blockIndex}`)
+      })
+      return out
+    }
+
     function Panel() {
       const tr = useTr()
       const status = usePoll('fleet/status', 5000, true, 'status')
@@ -1184,7 +1252,7 @@ window.__ModuleLoader__.load({
                 assistantMessages.length === 0
                   ? h('div', { className: 'dsf-msg assistant' }, tr('assistantWelcome'))
                   : assistantMessages.map((message, index) => h('div', { key: index, className: `dsf-msg ${message.role}` },
-                    message.text,
+                    message.role === 'assistant' ? renderAssistantMarkdown(message.text) : message.text,
                     message.action?.type === 'open-session'
                       ? h('div', { className: 'dsf-msg-action' },
                         h('button', {

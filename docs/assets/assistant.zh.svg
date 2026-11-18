@@ -44,6 +44,6 @@
     <rect x="314" y="382" width="30" height="40" rx="9" fill="#0f2a22" stroke="#1f6f55"/>
     <text x="322" y="407" fill="#7fe7c4" font-size="12">↑</text>
 
-    <text x="16" y="448" fill="#5b6674" font-size="9">规则版 v1 · 后续接 LLM 工具调用</text>
+    <text x="16" y="448" fill="#5b6674" font-size="9">真实 DSH 会话 · 优先派发从机</text>
   </g>
 </svg>

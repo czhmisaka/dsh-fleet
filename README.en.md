@@ -111,8 +111,9 @@ The right-hand dock is a collapsible **DSH assistant**. It does not just chat â€
 | Dispatch to /data/proj: run regression | Picks the **least-loaded online host**, creates a session and queues the task |
 | Resume running | Sends a "continue" prompt to every running session |
 | Budget 5 | Updates the global daily budget |
+| How is the comic-drama task doing? | Uses `sessions` / `tail` to read the real session and report progress |
 
-> This is **rule-based v1**: deterministic, predictable, no extra model quota. LLM tool-calling is next.
+> The assistant is backed by a **real persistent DSH session** on the master (workspace `~/.dsh/fleet-assistant`, with `fleetctl` inside): it has the full DSH toolbox (files, shell, web) but **prefers dispatching work to the least-loaded online host**, keeping only research/coordination tasks local. The session is created on first use.
 
 ## Architecture
 

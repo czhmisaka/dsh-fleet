@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.0 — 2026-11-18
+
+- **DSH 助手升级为真实 DSH 会话**：背后是 master 上一个持久会话（`~/.dsh/fleet-assistant`），拥有完整 DSH 工具（读写文件、跑命令、查会话、联网），不再只是规则匹配。
+- 助手工作区内置 `fleetctl`（state / running / sessions / usage / tail / dispatch / prompt），通过 loopback + 一次性 key 访问 fleet；支持把任务派发给最空闲的在线实例并跟踪结果。
+- 助手优先派发、后本地执行：先判断哪台实例合适，再 dispatch；问“某任务怎么样了”会用 sessions/tail 查真实状态而不是猜。
+- 助手回复改为轮询会话历史聚合，不受流式通道差异影响；dispatch 失败自动回退到规则版。
 ## v0.3.0 — 2026-11-18
 
 - 新增右侧可折叠 **DSH 助手**：状态汇总、运行中会话、今日用量、派发任务到最空闲设备、继续运行中会话、设置预算。
