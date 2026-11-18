@@ -44,6 +44,7 @@ window.__ModuleLoader__.load({
         expandRail: '展开实例栏',
         onlyRunning: '只看运行中',
         includeChildren: '含子会话',
+        hideUntitled: '隐藏无标题',
         childTag: '子',
         noSessionMatch: '没有匹配的会话',
         expandSessions: '展开会话列表',
@@ -140,6 +141,7 @@ window.__ModuleLoader__.load({
         expandRail: 'Expand instance rail',
         onlyRunning: 'Running only',
         includeChildren: 'With subagents',
+        hideUntitled: 'Hide untitled',
         childTag: 'sub',
         noSessionMatch: 'No matching session',
         expandSessions: 'Expand session list',
@@ -276,7 +278,7 @@ window.__ModuleLoader__.load({
 .dsf-sessions-head{display:flex;align-items:center;gap:6px;width:100%;background:none;border:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:11px;padding:0 8px 4px;cursor:pointer;text-align:left}
 .dsf-sessions-head:hover{color:var(--dsw-alias-label-primary)}
 .dsf-sessions-caret{margin-left:auto}
-.dsf-session-tools{display:flex;gap:6px;align-items:center;padding:2px 6px 6px}
+.dsf-session-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:2px 6px 6px}
 .dsf-search{flex:1;min-width:0;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:6px;color:inherit;font:inherit;font-size:11px;padding:4px 7px}
 .dsf-search:focus{outline:none;border-color:var(--dsw-alias-border-l2)}
 .dsf-chip{background:none;border:1px solid var(--dsw-alias-border-l1);border-radius:99px;color:var(--dsw-alias-label-secondary);font:inherit;font-size:10px;padding:3px 8px;cursor:pointer;white-space:nowrap}
@@ -477,9 +479,15 @@ window.__ModuleLoader__.load({
       const [showChildren, setShowChildren] = useState(() => {
         try { return localStorage.getItem('dsh-fleet.showChildren') === '1' } catch { return false }
       })
+      const [hideUntitled, setHideUntitled] = useState(() => {
+        try { return localStorage.getItem('dsh-fleet.hideUntitled') !== '0' } catch { return true }
+      })
       useEffect(() => {
         try { localStorage.setItem('dsh-fleet.showChildren', showChildren ? '1' : '0') } catch { /* private mode */ }
       }, [showChildren])
+      useEffect(() => {
+        try { localStorage.setItem('dsh-fleet.hideUntitled', hideUntitled ? '1' : '0') } catch { /* private mode */ }
+      }, [hideUntitled])
       const frameWrap = useRef(null)
       const instances = useMemo(() => Array.isArray(status.data?.instances) ? status.data.instances : [], [status.data])
       const selected = instances.find((item) => item.id === selectedId) ?? null
@@ -516,6 +524,7 @@ window.__ModuleLoader__.load({
             if (aggQuery.trim() !== '') params.set('q', aggQuery.trim())
             if (aggOnlyRunning) params.set('running', '1')
             if (showChildren) params.set('children', '1')
+            if (hideUntitled) params.set('titled', '1')
             const value = await apiGet(`fleet/aggregate?${params.toString()}`)
             if (!cancelled && value.ok) { setAgg(value); warmCache.aggregate = value }
           } catch {
@@ -532,7 +541,7 @@ window.__ModuleLoader__.load({
           clearInterval(timer)
           if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible)
         }
-      }, [allSelected, aggQuery, aggOnlyRunning, aggRefresh, showChildren])
+      }, [allSelected, aggQuery, aggOnlyRunning, aggRefresh, showChildren, hideUntitled])
 
       const aggSessions = Array.isArray(agg?.sessions) ? agg.sessions : []
       const aggDevices = new Set(aggSessions.map((entry) => entry.instanceId)).size
@@ -564,7 +573,7 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         setSessionError(null)
         if (selected === null || !selectedAuthed) { setSessionList(null); return undefined }
-        const useCache = sessionQuery.trim() === '' && !onlyRunning && !showChildren
+        const useCache = sessionQuery.trim() === '' && !onlyRunning && !showChildren && hideUntitled
         if (useCache && warmCache.sessions.has(selected.id)) setSessionList(warmCache.sessions.get(selected.id))
         let cancelled = false
         const load = async () => {
@@ -574,11 +583,12 @@ window.__ModuleLoader__.load({
             if (sessionQuery.trim() !== '') params.set('q', sessionQuery.trim())
             if (onlyRunning) params.set('running', '1')
             if (showChildren) params.set('children', '1')
+            if (hideUntitled) params.set('titled', '1')
             const value = await apiGet(`fleet/sessions?${params.toString()}`)
             if (!cancelled && value.ok) {
               setSessionList(value.sessions)
               setSessionError(null)
-              if (sessionQuery.trim() === '' && !onlyRunning && !showChildren) warmCache.sessions.set(selected.id, value.sessions)
+              if (sessionQuery.trim() === '' && !onlyRunning && !showChildren && hideUntitled) warmCache.sessions.set(selected.id, value.sessions)
             }
           } catch (failure) {
             if (!cancelled) setSessionError(failure instanceof Error ? failure.message : String(failure))
@@ -594,11 +604,12 @@ window.__ModuleLoader__.load({
           clearInterval(timer)
           if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible)
         }
-      }, [selected?.id, selectedAuthed, sessionQuery, onlyRunning, showChildren])
+      }, [selected?.id, selectedAuthed, sessionQuery, onlyRunning, showChildren, hideUntitled])
       const sessions = Array.isArray(sessionList?.items) ? sessionList.items : (Array.isArray(selected?.sessions?.items) ? selected.sessions.items : [])
       const sessionCount = sessionList?.count ?? selected?.sessions?.count ?? sessions.length
       const visibleSessions = sessions.filter((session) => {
         if (!showChildren && session.origin === 'subagent') return false
+        if (hideUntitled && String(session.title ?? '').trim() === '' && String(session.label ?? '').trim() === '') return false
         if (onlyRunning && session.running !== true) return false
         if (sessionQuery.trim() === '') return true
         const needle = sessionQuery.trim().toLowerCase()
@@ -727,7 +738,7 @@ window.__ModuleLoader__.load({
             ? h('div', { className: 'dsf-sessions' },
               h('div', { className: 'dsf-sessions-head' }, (() => {
                 const shown = typeof agg?.matched === 'number' ? agg.matched : aggSessions.length
-                const filtering = aggQuery.trim() !== '' || aggOnlyRunning
+                const filtering = aggQuery.trim() !== '' || aggOnlyRunning || hideUntitled
                 const cap = shown > aggSessions.length ? `（前 ${aggSessions.length}）` : ''
                 return `${tr('allEntry')} · ${filtering ? shown : aggTotal}${filtering ? ` / ${aggTotal}` : ''}${cap}`
               })()),
@@ -745,7 +756,11 @@ window.__ModuleLoader__.load({
                 h('button', {
                   className: `dsf-chip${showChildren ? ' on' : ''}`,
                   onClick: () => setShowChildren((value) => !value),
-                }, tr('includeChildren'))),
+                }, tr('includeChildren')),
+                h('button', {
+                  className: `dsf-chip${hideUntitled ? ' on' : ''}`,
+                  onClick: () => setHideUntitled((value) => !value),
+                }, tr('hideUntitled'))),
               aggSessions.length === 0
                 ? h('div', { className: 'dsf-sub', style: { padding: '6px 8px' } }, tr('noSessionMatch'))
                 : aggSessions.map((entry) => h('button', {
@@ -788,7 +803,11 @@ window.__ModuleLoader__.load({
                     h('button', {
                       className: `dsf-chip${showChildren ? ' on' : ''}`,
                       onClick: () => setShowChildren((value) => !value),
-                    }, tr('includeChildren'))),
+                    }, tr('includeChildren')),
+                    h('button', {
+                      className: `dsf-chip${hideUntitled ? ' on' : ''}`,
+                      onClick: () => setHideUntitled((value) => !value),
+                    }, tr('hideUntitled'))),
                   visibleSessions.length === 0
                     ? h('div', { className: 'dsf-sub', style: { padding: '6px 8px' } }, tr('noSessionMatch'))
                     : visibleSessions.map((session) => h('button', {

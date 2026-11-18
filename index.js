@@ -29,6 +29,14 @@ export const name = 'dsh-fleet'
 /** Host services used by both roles. */
 export const inject = ['webServer', 'connection', 'settings', 'credentials', 'timer']
 
+/** Whether a session carries a human title (subagent sessions may only have a label). */
+function sessionHasTitle(item) {
+  const title = typeof item?.projections?.values?.title === 'string' ? item.projections.values.title.trim() : ''
+  if (title !== '') return true
+  const label = typeof item?.projections?.values?.subagent?.label === 'string' ? item.projections.values.subagent.label.trim() : ''
+  return label !== ''
+}
+
 const NS = 'dsh-fleet'
 const DEFAULT_INSTANCES = []
 
@@ -753,6 +761,7 @@ class Fleet {
         const query = (url.searchParams.get('q') ?? '').trim().toLowerCase()
         const onlyRunning = url.searchParams.get('running') === '1'
         const includeChildren = url.searchParams.get('children') === '1'
+        const titledOnly = url.searchParams.get('titled') === '1'
         const perInstance = await Promise.all([...this.runtimes.values()].map(async (runtime) => {
           const instance = runtime.state.instance
           try {
@@ -783,6 +792,7 @@ class Fleet {
         })))
         const all = includeChildren ? flattened : flattened.filter((session) => session.origin !== 'subagent')
         const matched = all.filter((session) => {
+          if (titledOnly && String(session.title ?? '').trim() === '' && String(session.label ?? '').trim() === '') return false
           if (onlyRunning && session.running !== true) return false
           if (query === '') return true
           return session.title.toLowerCase().includes(query) || String(session.sessionId).toLowerCase().includes(query)
@@ -817,7 +827,8 @@ class Fleet {
           const query = (url.searchParams.get('q') ?? '').trim().toLowerCase()
           const onlyRunning = url.searchParams.get('running') === '1'
           const includeChildren = url.searchParams.get('children') === '1'
-          const cacheKey = `${instanceId}|${query}|${onlyRunning ? '1' : '0'}|${includeChildren ? '1' : '0'}`
+          const titledOnly = url.searchParams.get('titled') === '1'
+          const cacheKey = `${instanceId}|${query}|${onlyRunning ? '1' : '0'}|${includeChildren ? '1' : '0'}|${titledOnly ? '1' : '0'}`
           const cached = this.sessionsCache.get(cacheKey)
           if (cached !== undefined && Date.now() - cached.at < 10000) {
             json(res, { ok: true, sessions: cached.value })
@@ -835,6 +846,7 @@ class Fleet {
           }
           const all = includeChildren ? raw : raw.filter((item) => item.origin !== 'subagent')
           const matched = all.filter((item) => {
+            if (titledOnly && !sessionHasTitle(item)) return false
             if (onlyRunning && item.running !== true) return false
             if (query === '') return true
             const title = typeof item.projections?.values?.title === 'string' ? item.projections.values.title.toLowerCase() : ''
