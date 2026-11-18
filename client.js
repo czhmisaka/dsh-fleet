@@ -418,11 +418,14 @@ window.__ModuleLoader__.load({
 .dsf-usage-cell-title{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .dsf-usage-cell-tokens,.dsf-usage-cell-cost,.dsf-usage-cell-window{font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
 
+
+.dsf-resizer{width:5px;flex:none;cursor:col-resize;background:transparent;position:relative;z-index:3;border-radius:3px}
+.dsf-resizer:hover,.dsf-resizer:active{background:rgba(52,211,153,.28)}
+body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-assistant{width:420px;flex:none;min-height:0;border-left:1px solid var(--dsw-alias-border-l1);display:flex;flex-direction:column;background:var(--dsw-specific-sidebar-fill)}
 .dsf-assistant-head{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .dsf-assistant-title{font-size:12.5px;font-weight:650;flex:none}
 .dsf-assistant-head .dsf-hint{flex:1;margin:0}
-.dsf-assistant.wide{width:min(780px,55vw)}
 .dsf-assistant-frame-wrap{flex:1;min-height:0;position:relative;background:var(--dsw-alias-bg-base)}
 .dsf-assistant-frame{position:absolute;inset:0 0 46px 0;width:100%;height:calc(100% - 46px);border:0;background:transparent}
 .dsf-assistant-state{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-secondary);font-size:12px;padding:16px;text-align:center;line-height:1.6}
@@ -445,7 +448,11 @@ window.__ModuleLoader__.load({
 .dsf-assistant-chips{flex:none;display:flex;flex-wrap:wrap;gap:6px;padding:6px 12px 0}
 .dsf-assistant-input{flex:none;display:flex;gap:6px;align-items:flex-end;padding:8px 12px 52px}
 .dsf-assistant-input textarea{flex:1;min-height:36px;max-height:110px;resize:none;background:var(--dsw-alias-bg-layer-2);color:inherit;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;padding:7px 9px;font:inherit;font-size:12px}
-@media (max-width: 1180px){.dsf-assistant{width:300px}}
+@media (max-width: 1180px){
+.dsf-resizer{width:5px;flex:none;cursor:col-resize;background:transparent;position:relative;z-index:3;border-radius:3px}
+.dsf-resizer:hover,.dsf-resizer:active{background:rgba(52,211,153,.28)}
+body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
+.dsf-assistant{width:300px}}
 .dsf-cards{position:absolute;inset:0;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;align-content:start}
 .dsf-card{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1);padding:12px 14px;min-width:0}
 .dsf-card-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -940,7 +947,12 @@ window.__ModuleLoader__.load({
       const [assistantSessionId, setAssistantSessionId] = useState(null)
       const [assistantSessionError, setAssistantSessionError] = useState(null)
       const [assistantReload, setAssistantReload] = useState(0)
-      const [assistantWide, setAssistantWide] = useState(false)
+      const [asideWidth, setAsideWidth] = useState(() => {
+        try { const value = Number(localStorage.getItem('dsh-fleet.asideWidth')); return Number.isFinite(value) && value >= 180 && value <= 460 ? value : 252 } catch { return 252 }
+      })
+      const [assistantWidth, setAssistantWidth] = useState(() => {
+        try { const value = Number(localStorage.getItem('dsh-fleet.assistantWidth')); return Number.isFinite(value) && value >= 300 && value <= 900 ? value : 420 } catch { return 420 }
+      })
       const [assistantOpen, setAssistantOpen] = useState(() => {
         try { return localStorage.getItem('dsh-fleet.assistantOpen') !== '0' } catch { return true }
       })
@@ -1267,11 +1279,39 @@ window.__ModuleLoader__.load({
         if (element !== null && typeof element.requestFullscreen === 'function') void element.requestFullscreen()
       }
 
-      const assistantDock = assistantOpen ? h('aside', { className: `dsf-assistant${assistantWide ? ' wide' : ''}` },
+      useEffect(() => {
+        try { localStorage.setItem('dsh-fleet.asideWidth', String(Math.round(asideWidth))) } catch { /* private mode */ }
+      }, [asideWidth])
+
+      useEffect(() => {
+        try { localStorage.setItem('dsh-fleet.assistantWidth', String(Math.round(assistantWidth))) } catch { /* private mode */ }
+      }, [assistantWidth])
+
+      const startResize = (which, event) => {
+        event.preventDefault()
+        const startX = event.clientX
+        const startWidth = which === 'aside' ? asideWidth : assistantWidth
+        const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+        const onMove = (moveEvent) => {
+          const delta = moveEvent.clientX - startX
+          if (which === 'aside') setAsideWidth(clamp(startWidth + delta, 180, 460))
+          else setAssistantWidth(clamp(startWidth - delta, 300, 900))
+        }
+        const onUp = () => {
+          window.removeEventListener('pointermove', onMove)
+          window.removeEventListener('pointerup', onUp)
+          document.body.classList.remove('dsf-resizing')
+        }
+        document.body.classList.add('dsf-resizing')
+        window.addEventListener('pointermove', onMove)
+        window.addEventListener('pointerup', onUp, { once: true })
+      }
+
+      const assistantDock = assistantOpen ? h('aside', { className: 'dsf-assistant', style: { width: `${Math.round(assistantWidth)}px` } },
         h('div', { className: 'dsf-assistant-head' },
           h('span', { className: 'dsf-assistant-title' }, tr('assistantTitle')),
           h('span', { className: 'dsf-hint' }, tr('assistantHint')),
-          h('button', { className: 'dsf-btn', title: assistantWide ? '收起宽度' : '撑宽', onClick: () => setAssistantWide((value) => !value) }, '⤢'),
+          h('button', { className: 'dsf-btn', title: '撑宽 / 还原', onClick: () => setAssistantWidth((value) => value > 560 ? 420 : 780) }, '⤢'),
           h('button', {
             className: 'dsf-btn',
             disabled: assistantSessionId === null,
@@ -1300,7 +1340,7 @@ window.__ModuleLoader__.load({
         : null
 
       return h('div', { className: 'dsf-root' },
-        h('aside', { className: `dsf-aside${railCollapsed ? ' collapsed' : ''}` },
+        h('aside', { className: `dsf-aside${railCollapsed ? ' collapsed' : ''}`, style: railCollapsed ? undefined : { width: `${Math.round(asideWidth)}px` } },
           h('div', { className: 'dsf-head' }, tr('title')),
           h('div', { className: 'dsf-sub' }, tr('subtitle')),
           h('button', {
@@ -1422,6 +1462,7 @@ window.__ModuleLoader__.load({
           h('div', { className: `dsf-spacer${allSelected || (selected !== null && sessions.length > 0) ? ' tight' : ''}` }),
           h('button', { className: 'dsf-btn', style: { margin: '8px 4px 0' }, onClick: () => setLaunchOpen(true) }, tr('launchSession')),
           h('button', { className: 'dsf-btn', style: { margin: '8px 4px 0' }, onClick: () => setAddOpen(true) }, tr('add'))),
+        railCollapsed ? null : h('div', { key: 'resize-aside', className: 'dsf-resizer', title: '拖动调整左栏宽度', onPointerDown: (event) => startResize('aside', event) }),
         h('main', { className: 'dsf-main' },
           h('div', { className: 'dsf-bar' },
             h('button', {
@@ -1563,6 +1604,7 @@ window.__ModuleLoader__.load({
                 setAggRefresh((value) => value + 1)
               },
             }) : null)),
+            assistantOpen ? h('div', { key: 'resize-assistant', className: 'dsf-resizer', title: '拖动调整助手宽度', onPointerDown: (event) => startResize('assistant', event) }) : null,
             assistantDock)
     }
 
