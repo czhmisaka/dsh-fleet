@@ -100,18 +100,7 @@ PATCH'
 
 ## 架构
 
-```mermaid
-flowchart LR
-  B["浏览器<br/>同一个面板"] --> M["master DSH<br/>/fleet/*"]
-  M --> P1["loopback 代理<br/>127.0.0.1:37801"]
-  M --> P2["loopback 代理<br/>127.0.0.1:37803"]
-  M --> A["/fleet-agent/*"]
-  P1 --> D1["远端 DSH :3080"]
-  P2 --> D2["远端 DSH :3080"]
-  A --> S1["agent 角色<br/>ping/info/sessions/panel"]
-  D1 --> U1["dsh-context :40005"]
-  D2 --> U2["dsh-context :40005"]
-```
+<img src="docs/assets/architecture.svg" alt="dsh-fleet architecture" width="100%">
 
 - 每个实例在 master 上都有**独立 origin**（`127.0.0.1:<port>`），localStorage / cookie 天然隔离。
 - 远端 cookie 由 master 代理注入，浏览器只拿到带一次性 key 的回环 URL。

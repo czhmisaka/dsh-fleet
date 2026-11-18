@@ -98,18 +98,7 @@ In the panel, rail bottom → **Add** with name, DSH URL, dashboard URL, SSH and
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  B["Browser<br/>one panel"] --> M["master DSH<br/>/fleet/*"]
-  M --> P1["loopback proxy<br/>127.0.0.1:37801"]
-  M --> P2["loopback proxy<br/>127.0.0.1:37803"]
-  M --> A["/fleet-agent/*"]
-  P1 --> D1["remote DSH :3080"]
-  P2 --> D2["remote DSH :3080"]
-  A --> S1["agent role<br/>ping/info/sessions/panel"]
-  D1 --> U1["dsh-context :40005"]
-  D2 --> U2["dsh-context :40005"]
-```
+<img src="docs/assets/architecture.svg" alt="dsh-fleet architecture" width="100%">
 
 - Every instance gets its own origin on the master (`127.0.0.1:<port>`), so localStorage/cookies are isolated.
 - The remote cookie is injected by the master proxy; the browser only receives loopback URLs carrying a one-time key.
