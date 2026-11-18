@@ -270,10 +270,10 @@ window.__ModuleLoader__.load({
 .dsf-metric{display:flex;align-items:center;gap:8px;margin:5px 0}
 .dsf-metric-label{flex:none;width:46px;font-size:11px;color:var(--dsw-alias-label-secondary)}
 .dsf-metric-val{flex:none;min-width:96px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums}
-.dsf-bar{position:relative;flex:1;height:6px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);overflow:hidden;min-width:36px}
-.dsf-bar>i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:currentColor}
-.dsf-bar>u{position:absolute;left:0;bottom:0;height:2px;border-radius:999px;background:currentColor;opacity:.45}
-.dsf-bar.cool{color:#34d399}.dsf-bar.warm{color:#fbbf24}.dsf-bar.hot{color:#f87171}
+.dsf-meter{position:relative;flex:1;height:6px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);overflow:hidden;min-width:36px}
+.dsf-meter>i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:currentColor}
+.dsf-meter>u{position:absolute;left:0;bottom:0;height:2px;border-radius:999px;background:currentColor;opacity:.45}
+.dsf-meter.cool{color:#34d399}.dsf-meter.warm{color:#fbbf24}.dsf-meter.hot{color:#f87171}
 .dsf-gpu-row{align-items:center}
 .dsf-gpu-name{flex:none;max-width:42%;overflow:hidden;text-overflow:ellipsis;font-size:11px}
 .dsf-gpu-val{flex:none;display:flex;align-items:center;gap:8px;font-size:11px;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary)}
@@ -476,7 +476,7 @@ window.__ModuleLoader__.load({
       const level = util === null ? 'cool' : util >= 85 ? 'hot' : util >= 50 ? 'warm' : 'cool'
       return h('div', { className: 'dsf-gpu-row', key: index },
         h('span', { className: 'dsf-gpu-name', title: gpu.name }, `${tr('gpus')}${total > 1 ? index : ''} ${gpu.name}`),
-        h('div', { className: `dsf-bar ${level}` },
+        h('div', { className: `dsf-meter ${level}` },
           h('i', { style: { width: `${util === null ? 0 : util}%` } }),
           memPct === null ? null : h('u', { style: { width: `${Math.max(0, Math.min(100, memPct))}%` } })),
         h('span', { className: 'dsf-gpu-val' },
@@ -492,7 +492,7 @@ window.__ModuleLoader__.load({
       const level = value === null ? 'cool' : value >= 85 ? 'hot' : value >= 60 ? 'warm' : 'cool'
       return h('div', { className: 'dsf-metric' },
         h('span', { className: 'dsf-metric-label' }, label),
-        h('div', { className: `dsf-bar ${level}` }, h('i', { style: { width: `${value === null ? 0 : value}%` } })),
+        h('div', { className: `dsf-meter ${level}` }, h('i', { style: { width: `${value === null ? 0 : value}%` } })),
         h('span', { className: 'dsf-metric-val' }, text))
     }
 
