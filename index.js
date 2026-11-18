@@ -20,8 +20,8 @@ import { homedir, hostname } from 'node:os'
 import { join } from 'node:path'
 import { startProxy } from './host/proxy.js'
 import {
-  agentCall, callRemote, exchangeToken, fetchTokenViaSsh, normalizePanel, panelRaw, panelStatus,
-  probeInstance, remoteSessions,
+  agentCall, callRemote, contextOverview, exchangeToken, fetchTokenViaSsh, normalizePanel, panelRaw,
+  panelStatus, probeInstance, remoteSessions,
 } from './host/remote.js'
 
 export const name = 'dsh-fleet'
@@ -92,6 +92,9 @@ class Fleet {
     this.lastReconcileAt = 0
     this.appliedPollMs = 0
     this.agentSessionsCache = null
+    this.usageCache = new Map()
+    this.usageDaysCache = new Map()
+    this.usageBusy = new Set()
     this.ns = NS
     this.config = this.baseConfig
     this.started = false
@@ -563,6 +566,194 @@ class Fleet {
     return { ok: true, now: Date.now(), machines }
   }
 
+  /** Local-midnight range start for the usage view. */
+  usageRangeStart(range) {
+    const date = new Date()
+    date.setHours(0, 0, 0, 0)
+    const days = range === '7d' ? 7 : range === '30d' ? 30 : 1
+    return date.getTime() - (days - 1) * 86400000
+  }
+
+  /** Token total of one session-list item (fallback when dsh-context is absent). */
+  sessionTokens(item) {
+    const usage = item?.projections?.values?.tokenUsage
+    if (usage === null || usage === undefined) return 0
+    return ['uncachedInputTokens', 'outputTokens', 'cacheReadTokens', 'cacheWriteTokens']
+      .map((key) => (typeof usage[key] === 'number' ? usage[key] : 0))
+      .reduce((sum, value) => sum + value, 0)
+  }
+
+  /** Fetch usage for one instance; degrades to session/list sums without dsh-context. */
+  async fetchInstanceUsage(runtime, range) {
+    const instance = runtime.state.instance
+    const start = this.usageRangeStart(range)
+    const state = runtime.state
+    const base = { id: instance.id, name: instance.name || instance.id, online: state.online }
+    if (!state.authed) {
+      return { ...base, error: state.authError ?? 'not authorized', degraded: false, summary: null, models: [], topSessions: [], days: [] }
+    }
+    try {
+      // dsh-context summary reports lifetime tokens of the sessions active in a
+      // range; per-day buckets are the range-accurate source, so fetch them and
+      // derive range totals from the buckets below.
+      const summaryValue = await contextOverview(instance.dshUrl, state.cookie, {
+        part: 'summary',
+        scope: { range: { start, end: null }, coverage: 'all' },
+      }, 8000)
+      const pageValue = await contextOverview(instance.dshUrl, state.cookie, {
+        part: 'page',
+        scope: { range: { start, end: null }, coverage: 'all' },
+        sort: 'tokens',
+        page: 0,
+      }, 8000)
+      const summary = summaryValue?.summary ?? null
+      const allItems = Array.isArray(pageValue?.page?.items) ? pageValue.page.items : []
+      const items = allItems.filter((item) => typeof item.updatedAt !== 'number' || item.updatedAt >= start)
+      const models = new Map()
+      for (const item of items) {
+        const model = typeof item.model === 'string' && item.model !== '' ? item.model : '—'
+        const entry = models.get(model) ?? { model, tokens: 0, sessions: 0, costUsd: null }
+        entry.tokens += typeof item.tokens === 'number' ? item.tokens : 0
+        entry.sessions += 1
+        if (typeof item.costUsd === 'number') entry.costUsd = (entry.costUsd ?? 0) + item.costUsd
+        models.set(model, entry)
+      }
+      const topSessions = items.slice(0, 50).map((item) => ({
+        sessionId: item.id,
+        title: typeof item.title === 'string' ? item.title : '',
+        tokens: typeof item.tokens === 'number' ? item.tokens : 0,
+        turns: typeof item.turns === 'number' ? item.turns : 0,
+        costUsd: typeof item.costUsd === 'number' ? item.costUsd : null,
+        model: typeof item.model === 'string' ? item.model : null,
+        contextWindow: typeof item.contextWindow === 'number' ? item.contextWindow : null,
+        running: item.running === true,
+        updatedAt: typeof item.updatedAt === 'number' ? item.updatedAt : null,
+      }))
+      let days = []
+      const dayCached = this.usageDaysCache.get(instance.id)
+      if (dayCached !== undefined && Date.now() - dayCached.at < 300000) {
+        days = dayCached.value
+      } else {
+        try {
+          const dayValue = await contextOverview(instance.dshUrl, state.cookie, { part: 'days', scope: { coverage: 'all' } }, 8000)
+          days = (Array.isArray(dayValue?.days) ? dayValue.days : []).map((day) => ({
+            key: day.key,
+            tokens: typeof day.tokens === 'number' ? day.tokens : 0,
+            sessions: typeof day.sessions === 'number' ? day.sessions : 0,
+            costUsd: typeof day.costUsd === 'number' ? day.costUsd : null,
+          }))
+          this.usageDaysCache.set(instance.id, { at: Date.now(), value: days })
+        } catch {
+          days = dayCached?.value ?? []
+        }
+      }
+      const startDate = new Date(start)
+      const startKey = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
+      const rangeDays = days.filter((day) => day.key >= startKey)
+      const rangeTokens = rangeDays.reduce((sum, day) => sum + day.tokens, 0)
+      const pricedDays = rangeDays.every((day) => typeof day.costUsd === 'number')
+      const rangeCost = pricedDays ? rangeDays.reduce((sum, day) => sum + day.costUsd, 0) : null
+      const useDays = rangeDays.length > 0
+      return {
+        ...base,
+        error: null,
+        degraded: false,
+        summary: {
+          tokens: useDays ? rangeTokens : (typeof summary?.tokens === 'number' ? summary.tokens : 0),
+          costUsd: useDays ? rangeCost : (typeof summary?.costUsd === 'number' ? summary.costUsd : null),
+          cacheHit: typeof summary?.cacheHit === 'string' ? summary.cacheHit : null,
+          sessions: typeof summary?.sessions === 'number' ? summary.sessions : items.length,
+          turns: typeof summary?.turns === 'number' ? summary.turns : 0,
+          coverage: summary?.coverage ?? null,
+          pricingReady: summaryValue?.pricingReady === true,
+          tokenParts: Array.isArray(summary?.tokenParts) ? summary.tokenParts : [],
+        },
+        models: [...models.values()].sort((a, b) => b.tokens - a.tokens),
+        topSessions,
+        days,
+      }
+    } catch (error) {
+      this.log(`usage context for ${instance.id} failed: ${macMessage(error)}`)
+      // No dsh-context (or it failed): fall back to session-list token sums.
+      try {
+        const allSessions = await this.fullSessions(runtime)
+        const items = allSessions.filter((item) => typeof item.updatedAt !== 'number' || item.updatedAt >= start)
+        const models = new Map()
+        let tokens = 0
+        for (const item of items) {
+          const value = this.sessionTokens(item)
+          tokens += value
+          const model = item?.projections?.values?.modelSelection?.lastUsed?.model
+          if (typeof model === 'string' && model !== '') {
+            const entry = models.get(model) ?? { model, tokens: 0, sessions: 0, costUsd: null }
+            entry.tokens += value
+            entry.sessions += 1
+            models.set(model, entry)
+          }
+        }
+        const topSessions = items
+          .map((item) => ({
+            sessionId: item.sessionId,
+            title: typeof item.projections?.values?.title === 'string' ? item.projections.values.title : '',
+            tokens: this.sessionTokens(item),
+            turns: 0,
+            costUsd: null,
+            model: item?.projections?.values?.modelSelection?.lastUsed?.model ?? null,
+            contextWindow: null,
+            running: item.running === true,
+            updatedAt: item.updatedAt ?? null,
+          }))
+          .sort((a, b) => b.tokens - a.tokens)
+          .slice(0, 50)
+        return {
+          ...base,
+          error: null,
+          degraded: true,
+          degradedReason: macMessage(error),
+          summary: { tokens, costUsd: null, cacheHit: null, sessions: items.length, turns: 0, coverage: null, pricingReady: false, tokenParts: [] },
+          models: [...models.values()].sort((a, b) => b.tokens - a.tokens),
+          topSessions,
+          days: [],
+        }
+      } catch (fallbackError) {
+        return { ...base, error: macMessage(fallbackError), degraded: true, summary: null, models: [], topSessions: [], days: [] }
+      }
+    }
+  }
+
+  /** Refresh the usage aggregate for one range (per-instance failures stay isolated). */
+  async refreshUsage(range) {
+    const key = range
+    if (this.usageBusy.has(key)) return
+    this.usageBusy.add(key)
+    try {
+      const runtimes = [...this.runtimes.values()]
+      const instances = await Promise.all(runtimes.map((runtime) => this.fetchInstanceUsage(runtime, range)))
+      let tokens = 0
+      let cost = 0
+      let priced = true
+      let sessions = 0
+      let running = 0
+      for (const entry of instances) {
+        tokens += entry.summary?.tokens ?? 0
+        if (typeof entry.summary?.costUsd === 'number') cost += entry.summary.costUsd
+        else if (entry.summary !== null) priced = false
+        sessions += entry.summary?.sessions ?? 0
+        running += entry.topSessions.filter((session) => session.running).length
+      }
+      const value = {
+        ok: true,
+        generatedAt: Date.now(),
+        range,
+        totals: { tokens, costUsd: priced ? cost : null, sessions, running, priced },
+        instances,
+      }
+      this.usageCache.set(key, { at: Date.now(), value })
+    } finally {
+      this.usageBusy.delete(key)
+    }
+  }
+
   registerRoutes() {
     const register = (route) => this.ctx.effect(() => this.ctx.webServer.register(route))
     const guard = (req, res) => {
@@ -664,6 +855,30 @@ class Fleet {
           json(res, { ok: true, sessionId, modelError })
         } catch (error) {
           json(res, { ok: false, error: macMessage(error) }, 400)
+        }
+      },
+    })
+    register({
+      kind: 'exact',
+      path: '/fleet/usage',
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        this.lastClientAt = Date.now()
+        try {
+          const url = new URL(req.url ?? '/', 'http://127.0.0.1')
+          const rangeParam = url.searchParams.get('range') ?? 'today'
+          const range = ['today', '7d', '30d'].includes(rangeParam) ? rangeParam : 'today'
+          const cached = this.usageCache.get(range)
+          if (cached !== undefined) {
+            if (Date.now() - cached.at > 45000) void this.refreshUsage(range)
+            json(res, { ...cached.value, stale: Date.now() - cached.at > 45000 })
+            return
+          }
+          await this.refreshUsage(range)
+          const value = this.usageCache.get(range)
+          json(res, value === undefined ? { ok: false, error: 'usage unavailable' } : { ...value.value, stale: false })
+        } catch (error) {
+          json(res, { ok: false, error: macMessage(error) }, 500)
         }
       },
     })

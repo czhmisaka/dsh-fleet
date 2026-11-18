@@ -14,6 +14,7 @@
 | 插件位置 | DSH web profile：`~/.dsh/profiles/web/` |
 | 浏览器 | 推荐 **Chrome / Edge**。内嵌看板与远端 DSH 走 `http://localhost:<port>` 做跨站进程隔离，重页面不会卡主界面；Safari / Firefox 没有同样的跨站进程隔离，内嵌重看板可能仍然卡（可改用「打开看板」新标签） |
 | 上游协议 | 仅 **http**（https 上游暂不支持） |
+| 依赖插件 | 「用量」视图需要各机安装 `dsh-context`（上下文洞察）才能显示费用 / 缓存命中 / 上下文窗口；未安装时自动降级为仅 tokens |
 | 系统 | Linux / macOS 均可（主机与从机都不限） |
 
 依赖的 DSH 能力（均已在 0.2.2-rc.1 实测）：`ctx.settings`、`ctx.credentials`、`ctx.webServer.register`、`ctx.connection.requestRejection`、插槽 `sidebar.panellist` / `main` / `settings.section`、`uiWorkspace.openSession`、`layout.toggleSidebar`、`session/list`、`session/create`、`session/selectModel`、`session/modelCatalog`。

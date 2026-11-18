@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.0 — 2026-11-18
+
+- 新增「用量」视图：多机 tokens / 费用 / 缓存命中 / 会话数 / 运行中，今日 / 7 天 / 30 天切换。
+- 按设备卡片（含 14 天趋势）与按模型分布；会话消耗 TOP 50，可点开。
+- 数据来自每台 DSH 的 dsh-context（上下文洞察）`api/dsh-context/overview`；未安装时降级为 session/list 的 tokenUsage 汇总（仅 tokens，标「仅 tokens」）。
+- 时间范围用 per-day 桶计算，避免 dsh-context summary 的 lifetime 口径；服务端 45s 缓存、单台失败隔离。
+
 ## v0.1.11 — 2026-11-18
 
 - 修复总览里的进度条 CSS 类名与工具栏冲突，导致主区域出现一个巨大的圆角遮罩（v0.1.9/v0.1.10 引入）。

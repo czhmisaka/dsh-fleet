@@ -196,3 +196,27 @@ export function normalizePanel(data) {
 function numberOr(value) {
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
+
+/**
+ * Call the dsh-context overview API on a remote DSH (usage aggregation).
+ * @param {string} dshUrl - remote origin.
+ * @param {string} cookie - authenticated browser cookie.
+ * @param {object} body - overview request ({ part, scope, sort, page }).
+ * @param {number} timeoutMs - request budget.
+ * @returns {Promise<object>} the `value` envelope (summary/page/days/...).
+ */
+export async function contextOverview(dshUrl, cookie, body, timeoutMs = 8000) {
+  const raw = JSON.stringify(body)
+  const response = await requestWithHeaders(`${dshUrl}/api/dsh-context/overview`, {
+    method: 'POST',
+    headers: { cookie, 'content-type': 'application/json', 'content-length': Buffer.byteLength(raw) },
+    body: raw,
+    timeoutMs,
+  })
+  if (response.status !== 200) throw new Error(`dsh-context overview: HTTP ${String(response.status)}`)
+  const parsed = JSON.parse(response.text)
+  if (parsed?.ok !== true || parsed.value === null || typeof parsed.value !== 'object') {
+    throw new Error('dsh-context overview: invalid response')
+  }
+  return parsed.value
+}

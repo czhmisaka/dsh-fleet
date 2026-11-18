@@ -15,6 +15,7 @@ session list, and a launch dialog that picks device / folder / model.
 | Plugin location | DSH web profile: `~/.dsh/profiles/web/` |
 | Browser | **Chrome / Edge** recommended. Embedded dashboards and remote DSH viewers load through `http://localhost:<port>` so the browser gives them a separate site/process and heavy pages cannot freeze the panel; Safari / Firefox lack that isolation — use “Open dashboard” in a new tab there |
 | Upstream protocol | **http only** (https upstreams are not supported yet) |
+| Optional plugin | The Usage view needs `dsh-context` (Context Insights) on each host for cost / cache-hit / context-window data; without it the view degrades to tokens only |
 | OS | Linux / macOS (no restriction on master or agent hosts) |
 
 DSH capabilities used (all verified on 0.2.2-rc.1): `ctx.settings`, `ctx.credentials`,
