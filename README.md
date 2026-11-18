@@ -14,7 +14,7 @@
 
 </div>
 
-<img src="docs/assets/preview.zh.svg" alt="dsh-fleet 界面预览" width="100%">
+<img src="docs/assets/preview.zh.svg" alt="dsh-fleet 界面预览（含右侧 DSH 助手）" width="100%">
 
 ## 为什么是 dsh-fleet
 
@@ -115,7 +115,7 @@ PATCH'
 
 ## 架构
 
-<img src="docs/assets/architecture.zh.svg" alt="dsh-fleet architecture" width="100%">
+<img src="docs/assets/architecture.zh.svg" alt="dsh-fleet 架构图" width="100%">
 
 - 每个实例在 master 上都有**独立 origin**（`127.0.0.1:<port>`），localStorage / cookie 天然隔离。
 - 远端 cookie 由 master 代理注入，浏览器只拿到带一次性 key 的回环 URL。

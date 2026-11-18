@@ -3,8 +3,8 @@
   <rect width="380" height="560" rx="14" fill="url(#nabg)"/>
   <rect x="0.5" y="0.5" width="379" height="559" rx="13.5" fill="none" stroke="#232a35"/>
   <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
-    <text x="16" y="28" fill="#e8edf4" font-size="12.5" font-weight="700">Fleet 调度助手</text>
-    <text x="128" y="28" fill="#6b7684" font-size="9.5">master DSH 会话 · 原生聊天</text>
+    <text x="16" y="28" fill="#e8edf4" font-size="12.5" font-weight="700">DSH 助手</text>
+    <text x="128" y="28" fill="#6b7684" font-size="9.5">分配 · 下发 · 管理</text>
     <line x1="0" y1="42" x2="380" y2="42" stroke="#232a35"/>
     <text x="16" y="62" fill="#8b96a5" font-size="10">▍ 会话 · Fleet 助手</text>
 

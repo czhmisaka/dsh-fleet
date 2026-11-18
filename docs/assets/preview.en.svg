@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-label="dsh-fleet UI preview">
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="640" viewBox="0 0 1640 640" role="img" aria-label="dsh-fleet UI preview">
   <defs>
     <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#0c0e13"/><stop offset="1" stop-color="#0a0c10"/>
@@ -7,9 +7,9 @@
       <stop offset="0" stop-color="#a78bfa" stop-opacity="0.16"/><stop offset="1" stop-color="#000" stop-opacity="0"/>
     </radialGradient>
   </defs>
-  <rect width="1200" height="640" rx="18" fill="url(#bg2)"/>
-  <rect width="1200" height="640" rx="18" fill="url(#g2)"/>
-  <rect x="0.5" y="0.5" width="1199" height="639" rx="17.5" fill="none" stroke="#252b36"/>
+  <rect width="1640" height="640" rx="18" fill="url(#bg2)"/>
+  <rect width="1640" height="640" rx="18" fill="url(#g2)"/>
+  <rect x="0.5" y="0.5" width="1639" height="639" rx="17.5" fill="none" stroke="#252b36"/>
   <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
     <!-- rail -->
     <rect x="18" y="18" width="250" height="604" rx="12" fill="#10141b" stroke="#232a35"/>
@@ -116,6 +116,44 @@
         <text x="300" y="538" fill="#c9d2dc">host-b · Dashboard cleanup</text><text x="760" y="538" fill="#c9d2dc">182.4M</text><text x="880" y="538" fill="#c9d2dc">$6.10</text><text x="1000" y="538" fill="#7d8794">1.0M window</text>
         <text x="300" y="560" fill="#c9d2dc">host-a · Token audit</text><text x="760" y="560" fill="#c9d2dc">96.3M</text><text x="880" y="560" fill="#c9d2dc">$3.20</text><text x="1000" y="560" fill="#7d8794">1.0M window</text>
       </g>
+    </g>
+
+    <!-- resizers -->
+    <rect x="270" y="40" width="5" height="560" rx="2.5" fill="#34d399" fill-opacity="0.22"/>
+    <rect x="1181" y="40" width="5" height="560" rx="2.5" fill="#34d399" fill-opacity="0.22"/>
+    <!-- assistant dock -->
+    <g>
+      <rect x="1206" y="18" width="416" height="604" rx="12" fill="#10141b" stroke="#232a35"/>
+      <text x="1224" y="48" fill="#e8edf4" font-size="12.5" font-weight="700">DSH assistant</text>
+      <text x="1310" y="48" fill="#6b7684" font-size="9.5">assign · dispatch · manage</text>
+      <text x="1588" y="48" fill="#7d8794" font-size="13">×</text>
+      <line x1="1206" y1="62" x2="1622" y2="62" stroke="#232a35"/>
+
+      <rect x="1350" y="80" width="252" height="28" rx="9" fill="#14352a"/>
+      <text x="1362" y="98" fill="#d8f7ea" font-size="10">How is the comic-drama task?</text>
+
+      <rect x="1222" y="120" width="300" height="26" rx="8" fill="#181d25"/>
+      <text x="1234" y="137" fill="#9aa4b2" font-size="9.5">◍ fleetctl sessions --instance host-b</text>
+
+      <rect x="1222" y="156" width="380" height="118" rx="9" fill="#181d25"/>
+      <text x="1234" y="176" fill="#c9d2dc" font-size="10.5">Running — E04/E02 landed (15:25 / 15:27)</text>
+      <text x="1234" y="194" fill="#9aa4b2" font-size="10">E06/E08/E10 need ~30–50 min more</text>
+      <text x="1234" y="212" fill="#9aa4b2" font-size="10">Delivered: v3 final (10 shots / 1:16)</text>
+      <text x="1234" y="244" fill="#6b7684" font-size="9">tools · fleetctl · bash · session history</text>
+      <line x1="1210" y1="292" x2="1620" y2="292" stroke="#232a35"/>
+
+      <rect x="1222" y="308" width="380" height="90" rx="9" fill="#151b23" stroke="#2a3140"/>
+      <text x="1234" y="328" fill="#7fe7c4" font-size="9.5">AGENTS.md → dispatch to managed hosts first</text>
+      <text x="1234" y="346" fill="#9aa4b2" font-size="9.5">streaming · tools · @ files · model picker</text>
+      <text x="1234" y="364" fill="#9aa4b2" font-size="9.5">drag the divider to resize this dock</text>
+      <text x="1234" y="386" fill="#6b7684" font-size="9">the session lives at ~/.dsh/fleet-assistant</text>
+
+      <rect x="1222" y="520" width="330" height="44" rx="10" fill="#151b23" stroke="#2a3140"/>
+      <text x="1234" y="538" fill="#6b7684" font-size="9.5">Message, or type / for commands…</text>
+      <text x="1234" y="554" fill="#6b7684" font-size="9.5">@ files · ↑ history</text>
+      <rect x="1562" y="520" width="40" height="44" rx="10" fill="#0f2a22" stroke="#1f6f55"/>
+      <text x="1576" y="548" fill="#7fe7c4" font-size="13">↑</text>
+      <text x="1222" y="600" fill="#5b6674" font-size="8.5">native DSH session · streaming · tools · model picker</text>
     </g>
   </g>
 </svg>

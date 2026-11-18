@@ -36,7 +36,7 @@
     <text x="270" y="288" fill="#7d8794" font-size="10.5">remote cookies in credentials</text>
     <text x="270" y="308" fill="#7d8794" font-size="10.5">loopback proxies (DSH + panel)</text>
     <text x="270" y="328" fill="#7d8794" font-size="10.5">in-panel viewer · usage</text>
-    <text x="270" y="348" fill="#7d8794" font-size="10.5">launch · budgets</text>
+    <text x="270" y="348" fill="#7d8794" font-size="10.5">native assistant · launch · budgets</text>
 
     <!-- DSH proxy -->
     <rect x="520" y="118" width="212" height="90" rx="12" fill="#10141b" stroke="#2a3140"/>
@@ -84,6 +84,6 @@
     <line x1="352" y1="364" x2="352" y2="416" stroke="#5b6675" stroke-width="1.6" marker-end="url(#ah)" marker-start="url(#ah)"/>
     <text x="364" y="394" fill="#7d8794" font-size="9.5">/fleet-agent/* · read-only data</text>
 
-    <text x="44" y="534" fill="#6b7684" font-size="10">remote cookies never reach the browser · proxies bind 127.0.0.1 only · heavy embeds run in a separate process</text>
+    <text x="44" y="534" fill="#6b7684" font-size="10">remote cookies never reach the browser · proxies bind 127.0.0.1 only · instances can run on hosts or CubeSandbox</text>
   </g>
 </svg>

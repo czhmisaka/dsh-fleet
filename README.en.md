@@ -13,7 +13,7 @@ Cross-host sessions / live dashboards / usage & context pressure / one-click lau
 
 </div>
 
-<img src="docs/assets/preview.en.svg" alt="dsh-fleet UI preview" width="100%">
+<img src="docs/assets/preview.en.svg" alt="dsh-fleet UI preview (with the DSH assistant dock)" width="100%">
 
 ## Why dsh-fleet
 
