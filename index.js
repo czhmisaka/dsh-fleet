@@ -634,7 +634,9 @@ class Fleet {
       }))
       let days = []
       const dayCached = this.usageDaysCache.get(instance.id)
-      if (dayCached !== undefined && Date.now() - dayCached.at < 300000) {
+      // An empty bucket list usually means dsh-context had not backfilled yet;
+      // never trust such a cache, otherwise range totals fall back to lifetime.
+      if (dayCached !== undefined && Date.now() - dayCached.at < 300000 && Array.isArray(dayCached.value) && dayCached.value.length > 0) {
         days = dayCached.value
       } else {
         try {
@@ -654,8 +656,9 @@ class Fleet {
       const startKey = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`
       const rangeDays = days.filter((day) => day.key >= startKey)
       const rangeTokens = rangeDays.reduce((sum, day) => sum + day.tokens, 0)
-      const pricedDays = rangeDays.every((day) => typeof day.costUsd === 'number')
-      const rangeCost = pricedDays ? rangeDays.reduce((sum, day) => sum + day.costUsd, 0) : null
+      const pricedDays = rangeDays.filter((day) => typeof day.costUsd === 'number')
+      const costPartial = rangeDays.length > 0 && pricedDays.length < rangeDays.length
+      const rangeCost = pricedDays.length > 0 ? pricedDays.reduce((sum, day) => sum + day.costUsd, 0) : null
       const useDays = rangeDays.length > 0
       return {
         ...base,
@@ -664,6 +667,7 @@ class Fleet {
         summary: {
           tokens: useDays ? rangeTokens : (typeof summary?.tokens === 'number' ? summary.tokens : 0),
           costUsd: useDays ? rangeCost : (typeof summary?.costUsd === 'number' ? summary.costUsd : null),
+          costPartial: useDays ? costPartial : false,
           cacheHit: typeof summary?.cacheHit === 'string' ? summary.cacheHit : null,
           sessions: typeof summary?.sessions === 'number' ? summary.sessions : items.length,
           turns: typeof summary?.turns === 'number' ? summary.turns : 0,
@@ -735,11 +739,13 @@ class Fleet {
       let tokens = 0
       let cost = 0
       let priced = true
+      let costPartial = false
       let sessions = 0
       let running = 0
       let totalsCost = null
       for (const entry of instances) {
         tokens += entry.summary?.tokens ?? 0
+        if (entry.summary?.costPartial === true) costPartial = true
         if (typeof entry.summary?.costUsd === 'number') {
           cost += entry.summary.costUsd
           totalsCost = (totalsCost ?? 0) + entry.summary.costUsd
@@ -771,7 +777,7 @@ class Fleet {
         ok: true,
         generatedAt: Date.now(),
         range,
-        totals: { tokens, costUsd: priced ? cost : null, sessions, running, priced, budget: globalBudget > 0 ? { usd: globalBudget, spent: totalsCost, warnPct } : null },
+        totals: { tokens, costUsd: priced ? cost : null, costPartial, sessions, running, priced, budget: globalBudget > 0 ? { usd: globalBudget, spent: totalsCost, warnPct } : null },
         instances,
         warnings,
       }

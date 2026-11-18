@@ -719,7 +719,7 @@ window.__ModuleLoader__.load({
         const summary = instance.summary
         const stats = summary === null ? null : h('div', { className: 'dsf-usage-card-stats' },
           h('span', null, h('b', null, formatTokens(summary.tokens)), ' tokens'),
-          h('span', null, typeof summary.costUsd === 'number' ? formatUsd(summary.costUsd) : tr('usageNoPrice')),
+          h('span', null, typeof summary.costUsd === 'number' ? `${formatUsd(summary.costUsd)}${summary.costPartial ? '+' : ''}` : tr('usageNoPrice')),
           summary.cacheHit === null ? null : h('span', null, `${tr('usageCacheHit')} ${summary.cacheHit}%`),
           h('span', null, `${summary.sessions} ${tr('sessions')}`))
         const trend = (instance.days ?? []).length === 0 ? null : h('div', { className: 'dsf-usage-trend' },

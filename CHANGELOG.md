@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.2.2 — 2026-11-18
+
+- 修复：dsh-context 刚装好/反算中时缓存了空的每日桶，导致用量范围数字回退为 lifetime；空桶缓存不再被信任。
+
 ## v0.2.1 — 2026-11-18
 
 - 用量视图 P2：新增「上下文压力」区（运行中会话的上下文占用条 + 百分比 + 一键新会话），数据来自 `api/dsh-context/detail` 的 `head.current.total / contextWindow`。
