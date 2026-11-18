@@ -1,49 +1,38 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="360" height="560" viewBox="0 0 360 560" role="img" aria-label="dsh-fleet assistant">
-  <defs>
-    <linearGradient id="asbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10141b"/><stop offset="1" stop-color="#0c0f14"/></linearGradient>
-  </defs>
-  <rect width="360" height="560" rx="14" fill="url(#asbg)"/>
-  <rect x="0.5" y="0.5" width="359" height="559" rx="13.5" fill="none" stroke="#232a35"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="380" height="560" viewBox="0 0 380 560" role="img" aria-label="dsh-fleet native assistant">
+  <defs><linearGradient id="nabg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#10141b"/><stop offset="1" stop-color="#0c0f14"/></linearGradient></defs>
+  <rect width="380" height="560" rx="14" fill="url(#nabg)"/>
+  <rect x="0.5" y="0.5" width="379" height="559" rx="13.5" fill="none" stroke="#232a35"/>
   <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif">
-    <text x="16" y="30" fill="#e8edf4" font-size="12.5" font-weight="700">DSH 助手</text>
-    <text x="112" y="30" fill="#6b7684" font-size="10">分配 · 下发 · 管理</text>
-    <text x="330" y="30" fill="#7d8794" font-size="14">×</text>
-    <line x1="0" y1="44" x2="360" y2="44" stroke="#232a35"/>
+    <text x="16" y="28" fill="#e8edf4" font-size="12.5" font-weight="700">Fleet 调度助手</text>
+    <text x="128" y="28" fill="#6b7684" font-size="9.5">master DSH 会话 · 原生聊天</text>
+    <line x1="0" y1="42" x2="380" y2="42" stroke="#232a35"/>
+    <text x="16" y="62" fill="#8b96a5" font-size="10">▍ 会话 · Fleet 助手</text>
 
-    <rect x="120" y="58" width="224" height="30" rx="9" fill="#14352a"/>
-    <text x="132" y="77" fill="#d8f7ea" font-size="10.5">派发任务 到 /data/proj：跑一次回归</text>
+    <rect x="150" y="76" width="214" height="28" rx="9" fill="#14352a"/>
+    <text x="162" y="94" fill="#d8f7ea" font-size="10.5">漫剧任务咋样了？</text>
 
-    <rect x="16" y="98" width="268" height="46" rx="9" fill="#181d25"/>
-    <text x="28" y="117" fill="#c9d2dc" font-size="10.5">已派发到「host-b」（目录 /data/proj），</text>
-    <text x="28" y="133" fill="#c9d2dc" font-size="10.5">任务已进入队列。</text>
-    <rect x="28" y="140" width="60" height="0" rx="0" fill="none"/>
-    <text x="28" y="158" fill="#4ade80" font-size="10">打开会话 ↗</text>
+    <rect x="16" y="116" width="300" height="30" rx="8" fill="#181d25"/>
+    <text x="28" y="135" fill="#9aa4b2" font-size="10">◍ fleetctl sessions --instance host-b</text>
 
-    <rect x="152" y="162" width="192" height="26" rx="9" fill="#14352a"/>
-    <text x="164" y="179" fill="#d8f7ea" font-size="10.5">今天花了多少？</text>
+    <rect x="16" y="154" width="336" height="120" rx="9" fill="#181d25"/>
+    <text x="28" y="174" fill="#c9d2dc" font-size="10.5">正在跑 —— 队列 running=1</text>
+    <text x="28" y="192" fill="#9aa4b2" font-size="10">· E04、E02 已于 15:25 / 15:27 落盘</text>
+    <text x="28" y="208" fill="#9aa4b2" font-size="10">· E06/E08/E10 还在出片（约 30–50 分钟）</text>
+    <text x="28" y="224" fill="#9aa4b2" font-size="10">· 已交付：v3 成片（10 镜，1:16）</text>
+    <text x="28" y="248" fill="#6b7684" font-size="9">工具 · fleetctl · bash · 会话历史</text>
 
-    <rect x="16" y="198" width="300" height="92" rx="9" fill="#181d25"/>
-    <text x="28" y="217" fill="#c9d2dc" font-size="10.5">今日 869M tokens · $14.53</text>
-    <text x="28" y="234" fill="#9aa4b2" font-size="10">· host-a 612M · $9.64 · 缓存 97%</text>
-    <text x="28" y="250" fill="#9aa4b2" font-size="10">· host-b 242M · $4.55 · 缓存 96%</text>
-    <text x="28" y="266" fill="#9aa4b2" font-size="10">· host-c 15M · $0.34 · 缓存 90%</text>
-    <text x="28" y="282" fill="#6b7684" font-size="9.5">一台离线设备已跳过</text>
+    <rect x="16" y="286" width="336" height="1" fill="#232a35"/>
+    <rect x="16" y="298" width="336" height="92" rx="9" fill="#151b23" stroke="#2a3140"/>
+    <text x="28" y="318" fill="#6b7684" font-size="9.5">流式回答 · 完整 DSH 工具箱</text>
+    <text x="28" y="336" fill="#c9d2dc" font-size="10.5">在真实 DSH 会话里提问或跑工具</text>
+    <text x="28" y="352" fill="#9aa4b2" font-size="10">内嵌自 master · 同样的权限与模型</text>
+    <text x="28" y="372" fill="#7fe7c4" font-size="10">AGENTS.md → 优先派发到被管理实例</text>
 
-    <rect x="16" y="304" width="330" height="1" fill="#232a35"/>
-    <g>
-      <rect x="16" y="316" width="76" height="22" rx="11" fill="#151b23" stroke="#2a3140"/><text x="26" y="331" fill="#9aa4b2" font-size="9.5">状态汇总</text>
-      <rect x="100" y="316" width="86" height="22" rx="11" fill="#151b23" stroke="#2a3140"/><text x="110" y="331" fill="#9aa4b2" font-size="9.5">查看运行中</text>
-      <rect x="194" y="316" width="76" height="22" rx="11" fill="#151b23" stroke="#2a3140"/><text x="204" y="331" fill="#9aa4b2" font-size="9.5">今天花了多少</text>
-      <rect x="16" y="344" width="92" height="22" rx="11" fill="#151b23" stroke="#2a3140"/><text x="26" y="359" fill="#9aa4b2" font-size="9.5">继续运行中</text>
-      <rect x="116" y="344" width="66" height="22" rx="11" fill="#151b23" stroke="#2a3140"/><text x="126" y="359" fill="#9aa4b2" font-size="9.5">帮助</text>
-    </g>
-
-    <rect x="16" y="382" width="290" height="40" rx="9" fill="#151b23" stroke="#2a3140"/>
-    <text x="28" y="399" fill="#6b7684" font-size="9.5">例如：派发任务 到 /data/proj：</text>
-    <text x="28" y="413" fill="#6b7684" font-size="9.5">跑一次回归测试</text>
-    <rect x="314" y="382" width="30" height="40" rx="9" fill="#0f2a22" stroke="#1f6f55"/>
-    <text x="322" y="407" fill="#7fe7c4" font-size="12">↑</text>
-
-    <text x="16" y="448" fill="#5b6674" font-size="9">真实 DSH 会话 · 优先派发从机</text>
+    <rect x="16" y="440" width="298" height="44" rx="10" fill="#151b23" stroke="#2a3140"/>
+    <text x="28" y="458" fill="#6b7684" font-size="9.5">发消息，或输入 / 调用指令</text>
+    <text x="28" y="474" fill="#6b7684" font-size="9.5">@ 引用文件 · ↑ 查看历史</text>
+    <rect x="322" y="440" width="30" height="44" rx="10" fill="#0f2a22" stroke="#1f6f55"/>
+    <text x="330" y="467" fill="#7fe7c4" font-size="13">↑</text>
+    <text x="16" y="520" fill="#5b6674" font-size="9">原生内嵌 · 流式 · Markdown · 工具 · 模型选择</text>
   </g>
 </svg>

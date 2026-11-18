@@ -418,10 +418,14 @@ window.__ModuleLoader__.load({
 .dsf-usage-cell-title{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .dsf-usage-cell-tokens,.dsf-usage-cell-cost,.dsf-usage-cell-window{font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
 
-.dsf-assistant{width:340px;flex:none;min-height:0;border-left:1px solid var(--dsw-alias-border-l1);display:flex;flex-direction:column;background:var(--dsw-specific-sidebar-fill)}
+.dsf-assistant{width:420px;flex:none;min-height:0;border-left:1px solid var(--dsw-alias-border-l1);display:flex;flex-direction:column;background:var(--dsw-specific-sidebar-fill)}
 .dsf-assistant-head{height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .dsf-assistant-title{font-size:12.5px;font-weight:650;flex:none}
 .dsf-assistant-head .dsf-hint{flex:1;margin:0}
+.dsf-assistant.wide{width:min(780px,55vw)}
+.dsf-assistant-frame-wrap{flex:1;min-height:0;position:relative;background:var(--dsw-alias-bg-base)}
+.dsf-assistant-frame{position:absolute;inset:0 0 46px 0;width:100%;height:calc(100% - 46px);border:0;background:transparent}
+.dsf-assistant-state{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-secondary);font-size:12px;padding:16px;text-align:center;line-height:1.6}
 .dsf-assistant-log{flex:1;min-height:0;overflow:auto;padding:12px 12px 6px;display:flex;flex-direction:column;gap:10px}
 .dsf-msg{max-width:94%;padding:8px 10px;border-radius:10px;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-word}
 
@@ -933,6 +937,10 @@ window.__ModuleLoader__.load({
       const [usageData, setUsageData] = useState(null)
       const [usageError, setUsageError] = useState(null)
       const [usageContext, setUsageContext] = useState(null)
+      const [assistantSessionId, setAssistantSessionId] = useState(null)
+      const [assistantSessionError, setAssistantSessionError] = useState(null)
+      const [assistantReload, setAssistantReload] = useState(0)
+      const [assistantWide, setAssistantWide] = useState(false)
       const [assistantOpen, setAssistantOpen] = useState(() => {
         try { return localStorage.getItem('dsh-fleet.assistantOpen') !== '0' } catch { return true }
       })
@@ -980,6 +988,22 @@ window.__ModuleLoader__.load({
         const element = assistantLog.current
         if (element !== null) element.scrollTop = element.scrollHeight
       }, [assistantMessages, assistantBusy])
+
+      useEffect(() => {
+        if (!assistantOpen || assistantSessionId !== null) return undefined
+        let cancelled = false
+        void (async () => {
+          try {
+            const value = await apiGet('fleet/assistant/session')
+            if (cancelled) return
+            if (!value.ok) throw new Error(value.error ?? 'assistant init failed')
+            setAssistantSessionId(value.sessionId)
+          } catch (failure) {
+            if (!cancelled) setAssistantSessionError(failure instanceof Error ? failure.message : String(failure))
+          }
+        })()
+        return () => { cancelled = true }
+      }, [assistantOpen, assistantSessionId])
 
       const sendAssistant = async (raw) => {
         const message = String(raw ?? '').trim()
@@ -1243,49 +1267,37 @@ window.__ModuleLoader__.load({
         if (element !== null && typeof element.requestFullscreen === 'function') void element.requestFullscreen()
       }
 
-      const assistantDock = assistantOpen ? h('aside', { className: 'dsf-assistant' },
-              h('div', { className: 'dsf-assistant-head' },
-                h('span', { className: 'dsf-assistant-title' }, tr('assistantTitle')),
-                h('span', { className: 'dsf-hint' }, tr('assistantHint')),
-                h('button', { className: 'dsf-btn', onClick: () => setAssistantOpen(false) }, '×')),
-              h('div', { className: 'dsf-assistant-log', ref: assistantLog },
-                assistantMessages.length === 0
-                  ? h('div', { className: 'dsf-msg assistant' }, tr('assistantWelcome'))
-                  : assistantMessages.map((message, index) => h('div', { key: index, className: `dsf-msg ${message.role}` },
-                    message.role === 'assistant' ? renderAssistantMarkdown(message.text) : message.text,
-                    message.action?.type === 'open-session'
-                      ? h('div', { className: 'dsf-msg-action' },
-                        h('button', {
-                          className: 'dsf-btn small',
-                          onClick: () => {
-                            const target = instances.find((item) => item.id === message.action.instanceId)
-                            if (target !== undefined) {
-                              setSelectedId(target.id)
-                              openSessionFor(target, { sessionId: message.action.sessionId, title: '' })
-                            }
-                          },
-                        }, tr('openSession')))
-                      : null)),
-                assistantBusy ? h('div', { className: 'dsf-msg assistant dsf-typing' }, '…') : null),
-              h('div', { className: 'dsf-assistant-chips' },
-                ['assistantQuickStatus', 'assistantQuickRunning', 'assistantQuickUsage', 'assistantQuickResume', 'assistantQuickHelp'].map((key) => h('button', {
-                  key,
-                  className: 'dsf-chip',
-                  disabled: assistantBusy,
-                  onClick: () => void sendAssistant(tr(key)),
-                }, tr(key)))),
-              h('div', { className: 'dsf-assistant-input' },
-                h('textarea', {
-                  value: assistantInput,
-                  placeholder: tr('assistantPlaceholder'),
-                  rows: 2,
-                  onChange: (event) => setAssistantInput(event.target.value),
-                  onKeyDown: (event) => {
-                    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void sendAssistant(assistantInput) }
-                  },
-                }),
-                h('button', { className: 'dsf-btn primary', disabled: assistantBusy || assistantInput.trim() === '', onClick: () => void sendAssistant(assistantInput) }, tr('assistantSend'))))
-              : null
+      const assistantDock = assistantOpen ? h('aside', { className: `dsf-assistant${assistantWide ? ' wide' : ''}` },
+        h('div', { className: 'dsf-assistant-head' },
+          h('span', { className: 'dsf-assistant-title' }, tr('assistantTitle')),
+          h('span', { className: 'dsf-hint' }, tr('assistantHint')),
+          h('button', { className: 'dsf-btn', title: assistantWide ? '收起宽度' : '撑宽', onClick: () => setAssistantWide((value) => !value) }, '⤢'),
+          h('button', {
+            className: 'dsf-btn',
+            disabled: assistantSessionId === null,
+            onClick: () => {
+              if (assistantSessionId === null) return
+              openExternal(`/?dshfSession=${encodeURIComponent(assistantSessionId)}&dshfCollapse=1`)
+            },
+          }, tr('openTab')),
+          h('button', {
+            className: 'dsf-btn',
+            onClick: () => { setAssistantSessionError(null); setAssistantReload((value) => value + 1) },
+          }, tr('refresh')),
+          h('button', { className: 'dsf-btn', onClick: () => setAssistantOpen(false) }, '×')),
+        h('div', { className: 'dsf-assistant-frame-wrap' },
+          assistantSessionError !== null
+            ? h('div', { className: 'dsf-assistant-state' }, assistantSessionError)
+            : assistantSessionId === null
+              ? h('div', { className: 'dsf-assistant-state' }, tr('loading'))
+              : h('iframe', {
+                key: `${assistantSessionId}:${assistantReload}`,
+                className: 'dsf-assistant-frame',
+                src: `/?dshfSession=${encodeURIComponent(assistantSessionId)}&dshfCollapse=1&dshfShell=assistant`,
+                title: tr('assistantTitle'),
+                allow: 'clipboard-read; clipboard-write',
+              })))
+        : null
 
       return h('div', { className: 'dsf-root' },
         h('aside', { className: `dsf-aside${railCollapsed ? ' collapsed' : ''}` },
@@ -2018,6 +2030,23 @@ window.__ModuleLoader__.load({
               }
               setTimeout(run, 900)
               return () => { cancelled = true }
+            })
+          }
+        }
+        // `?dshfShell=assistant` trims the embedded master app down to the
+        // conversation: hide the app sidebar so the dock only shows chat.
+        if (typeof window !== 'undefined') {
+          const shell = new URLSearchParams(location.search).get('dshfShell')
+          if (shell === 'assistant') {
+            ctx.effect(() => {
+              const style = document.createElement('style')
+              style.setAttribute('data-dshf-embedded', '1')
+              style.textContent = '[class*="sidebarCol"]{display:none!important}'
+              document.head.appendChild(style)
+              const url = new URL(location.href)
+              url.searchParams.delete('dshfShell')
+              history.replaceState(null, '', url.pathname + url.search + url.hash)
+              return () => { style.remove() }
             })
           }
         }

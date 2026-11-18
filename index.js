@@ -1424,6 +1424,23 @@ switch (command) {
 
     register({
       kind: 'exact',
+      path: '/fleet/assistant/session',
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        if (req.method !== 'GET') { json(res, { ok: false, error: 'method not allowed' }, 405); return }
+        try {
+          const controller = this.ctx.get('sessionController')
+          if (controller === undefined) throw new Error('sessionController unavailable')
+          const sessionId = await this.ensureAssistantSession(controller)
+          json(res, { ok: true, sessionId })
+        } catch (error) {
+          json(res, { ok: false, error: macMessage(error) }, 400)
+        }
+      },
+    })
+
+    register({
+      kind: 'exact',
       path: '/fleet/assistant',
       handler: async (req, res) => {
         if (!guard(req, res)) return

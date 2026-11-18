@@ -99,21 +99,17 @@ In the panel, rail bottom → **Add** with name, DSH URL, dashboard URL, SSH and
 
 ## DSH assistant
 
-The right-hand dock is a collapsible **DSH assistant**. It does not just chat — it operates the fleet:
+The right-hand dock is a collapsible **DSH assistant** that embeds a **real DSH session from the master** — streaming output, tool calls, model switching, `@` file references and Markdown are all native DSH features, not a home-made chat box.
 
-<img src="docs/assets/assistant.en.svg" alt="DSH assistant" width="360">
+<img src="docs/assets/assistant.en.svg" alt="DSH assistant" width="380">
 
-| You say | It does |
-|---|---|
-| Fleet summary | Online / sessions / running / dashboard state per host |
-| Running sessions | Every running session on every host |
-| Usage today | Today's tokens / cost / cache hit per host |
-| Dispatch to /data/proj: run regression | Picks the **least-loaded online host**, creates a session and queues the task |
-| Resume running | Sends a "continue" prompt to every running session |
-| Budget 5 | Updates the global daily budget |
-| How is the comic-drama task doing? | Uses `sessions` / `tail` to read the real session and report progress |
+The workspace is fixed at `~/.dsh/fleet-assistant`; `AGENTS.md` defines its behaviour:
 
-> The assistant is backed by a **real persistent DSH session** on the master (workspace `~/.dsh/fleet-assistant`, with `fleetctl` inside): it has the full DSH toolbox (files, shell, web) but **prefers dispatching work to the least-loaded online host**, keeping only research/coordination tasks local. The session is created on first use.
+- Inspect the fleet, then **dispatch tasks to the least-loaded online host first**; the master only coordinates and answers lightweight questions.
+- Use `fleetctl` (state / running / sessions / usage / tail / dispatch / prompt) for real state and progress.
+- When asked "how is that task doing", read the session history and recent output instead of guessing.
+
+The dock header can widen the view, open the session in a new tab, or refresh. The session itself is persistent, so context survives.
 
 ## Architecture
 
