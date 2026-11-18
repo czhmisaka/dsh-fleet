@@ -549,6 +549,13 @@ class Fleet {
         id: instance.id,
         name: instance.name || instance.id,
         online: state.online,
+        authed: state.authed,
+        latencyMs: state.latencyMs,
+        sessions: state.sessions === null || state.sessions === undefined
+          ? null
+          : { count: state.sessions.count, running: state.sessions.running },
+        hasDashboard: typeof instance.panelUrl === 'string' && instance.panelUrl !== '',
+        dshVersion: state.agent?.dshVersion ?? null,
         source: state.agent?.ok === true ? 'agent' : 'direct',
         ...(state.panel === null ? { panelOk: false, error: state.panelError } : { panelOk: true, ...state.panel }),
       }

@@ -63,6 +63,7 @@ window.__ModuleLoader__.load({
         noAgent: '直连',
         sessions: '会话',
         running: '运行中',
+        idle: '空闲',
         runningView: '运行中',
         allEntry: '全部会话',
         noRunning: '当前没有运行中的会话（跨所有设备）',
@@ -159,6 +160,7 @@ window.__ModuleLoader__.load({
         noAgent: 'direct',
         sessions: 'sessions',
         running: 'running',
+        idle: 'idle',
         runningView: 'Running',
         allEntry: 'All sessions',
         noRunning: 'No session is running on any managed device.',
@@ -245,6 +247,44 @@ window.__ModuleLoader__.load({
 .dsf-run-instance{flex:none;max-width:78px;font-size:10px;line-height:15px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border-radius:4px;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dsf-sessions .dsf-run-instance{margin-right:2px}
 .dsf-run-title{flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.dsf-pill{flex:none;font-size:9.5px;line-height:15px;padding:0 6px;border-radius:999px;font-weight:600;white-space:nowrap}
+.dsf-pill.ok{color:#34d399;background:rgba(52,211,153,.14)}
+.dsf-pill.warn{color:#fbbf24;background:rgba(251,191,36,.16)}
+.dsf-pill.err{color:#f87171;background:rgba(248,113,113,.16)}
+.dsf-pill.live{color:#34d399;background:rgba(52,211,153,.14);font-variant-numeric:tabular-nums}
+.dsf-badge{flex:none;font-size:9px;line-height:14px;padding:0 5px;border-radius:4px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);white-space:nowrap}
+.dsf-badge.quiet{opacity:.75}
+.dsf-item.offline{opacity:.72}
+.dsf-item-name{display:flex;align-items:center;gap:5px;min-width:0}
+.dsf-item-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.dsf-item-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dsf-meta-dim{opacity:.72}
+.dsf-lat{font-variant-numeric:tabular-nums}
+.dsf-lat.fast{color:#34d399}.dsf-lat.ok{color:#fbbf24}.dsf-lat.slow{color:#f87171}
+.dsf-statrow{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 8px}
+.dsf-stat{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary)}
+.dsf-stat b{color:var(--dsw-alias-label-primary);font-weight:650}
+.dsf-stat.live{background:rgba(52,211,153,.14);color:#34d399}
+.dsf-stat.live b{color:#34d399}
+.dsf-metric{display:flex;align-items:center;gap:8px;margin:5px 0}
+.dsf-metric-label{flex:none;width:46px;font-size:11px;color:var(--dsw-alias-label-secondary)}
+.dsf-metric-val{flex:none;min-width:96px;text-align:right;font-size:11px;font-variant-numeric:tabular-nums}
+.dsf-bar{position:relative;flex:1;height:6px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);overflow:hidden;min-width:36px}
+.dsf-bar>i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:currentColor}
+.dsf-bar>u{position:absolute;left:0;bottom:0;height:2px;border-radius:999px;background:currentColor;opacity:.45}
+.dsf-bar.cool{color:#34d399}.dsf-bar.warm{color:#fbbf24}.dsf-bar.hot{color:#f87171}
+.dsf-gpu-row{align-items:center}
+.dsf-gpu-name{flex:none;max-width:42%;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.dsf-gpu-val{flex:none;display:flex;align-items:center;gap:8px;font-size:11px;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-secondary)}
+.dsf-gpu-val .hot{color:#f87171}
+.dsf-gpu-val b{font-variant-numeric:tabular-nums}
+.dsf-state{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:9.5px;line-height:15px;padding:0 5px;border-radius:999px;white-space:nowrap}
+.dsf-state.running{color:#34d399;background:rgba(52,211,153,.14);font-weight:600}
+.dsf-state.idle{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2)}
+.dsf-pulse{width:5px;height:5px;border-radius:999px;background:currentColor;animation:dsf-pulse 1.6s ease-in-out infinite}
+@keyframes dsf-pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@media (prefers-reduced-motion: reduce){.dsf-pulse{animation:none}}
 .dsf-cards{position:absolute;inset:0;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:12px;align-content:start}
 .dsf-card{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1);padding:12px 14px;min-width:0}
 .dsf-card-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -282,6 +322,8 @@ window.__ModuleLoader__.load({
 .dsf-chip{background:none;border:1px solid var(--dsw-alias-border-l1);border-radius:99px;color:var(--dsw-alias-label-secondary);font:inherit;font-size:10px;padding:3px 8px;cursor:pointer;white-space:nowrap}
 .dsf-chip.on{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-label-primary)}
 .dsf-session{display:flex;gap:7px;align-items:center;width:100%;background:none;border:none;color:inherit;font:inherit;text-align:left;padding:5px 8px;border-radius:7px;cursor:pointer}
+.dsf-session.running{background:linear-gradient(90deg,rgba(52,211,153,.10),rgba(52,211,153,0) 72%)}
+.dsf-session.running:hover{background:linear-gradient(90deg,rgba(52,211,153,.18),rgba(52,211,153,.02) 72%)}
 .dsf-session:hover{background:var(--dsw-specific-sidebar-nav-item-hover)}
 .dsf-session .dsf-dot{margin-top:0}
 .dsf-child{flex:none;font-size:9px;line-height:14px;padding:0 4px;border-radius:4px;background:var(--dsw-alias-bg-layer-3,#3a3a3a);color:var(--dsw-alias-label-secondary)}
@@ -425,37 +467,69 @@ window.__ModuleLoader__.load({
     }
 
     function gpuRow(tr, gpu, index, total) {
-      const used = gpu.memUsedMb === null ? null : gpu.memUsedMb / 1024
-      const size = gpu.memTotalMb === null ? null : gpu.memTotalMb / 1024
-      const parts = [
-        `${formatGb(used)} / ${formatGb(size)}`,
-        gpu.tempC === null ? null : `${gpu.tempC}°C`,
-        gpu.powerW === null ? null : `${Math.round(gpu.powerW)}W`,
-        gpu.utilPct === null ? null : `${Math.round(gpu.utilPct)}%`,
-      ].filter((part) => part !== null)
+      const usedGb = gpu.memUsedMb === null ? null : gpu.memUsedMb / 1024
+      const totalGb = gpu.memTotalMb === null ? null : gpu.memTotalMb / 1024
+      const util = typeof gpu.utilPct === 'number' ? Math.max(0, Math.min(100, gpu.utilPct)) : null
+      const memPct = typeof gpu.memPct === 'number'
+        ? gpu.memPct
+        : (usedGb !== null && totalGb ? (usedGb / totalGb) * 100 : null)
+      const level = util === null ? 'cool' : util >= 85 ? 'hot' : util >= 50 ? 'warm' : 'cool'
       return h('div', { className: 'dsf-gpu-row', key: index },
-        h('span', null, `${tr('gpus')}${total > 1 ? index : ''} ${gpu.name}`),
-        h('span', null, parts.join(' · ')))
+        h('span', { className: 'dsf-gpu-name', title: gpu.name }, `${tr('gpus')}${total > 1 ? index : ''} ${gpu.name}`),
+        h('div', { className: `dsf-bar ${level}` },
+          h('i', { style: { width: `${util === null ? 0 : util}%` } }),
+          memPct === null ? null : h('u', { style: { width: `${Math.max(0, Math.min(100, memPct))}%` } })),
+        h('span', { className: 'dsf-gpu-val' },
+          h('b', null, util === null ? '—' : `${Math.round(util)}%`),
+          h('span', null, `${formatGb(usedGb)}/${formatGb(totalGb)}`),
+          gpu.tempC === null ? null : h('span', { className: gpu.tempC >= 80 ? 'hot' : undefined }, `${gpu.tempC}°C`),
+          gpu.powerW === null ? null : h('span', null, `${Math.round(gpu.powerW)}W`)))
+    }
+
+    /** One labelled usage bar; colour reflects how hot the value is. */
+    function metricRow(tr, label, text, pct) {
+      const value = typeof pct === 'number' ? Math.max(0, Math.min(100, pct)) : null
+      const level = value === null ? 'cool' : value >= 85 ? 'hot' : value >= 60 ? 'warm' : 'cool'
+      return h('div', { className: 'dsf-metric' },
+        h('span', { className: 'dsf-metric-label' }, label),
+        h('div', { className: `dsf-bar ${level}` }, h('i', { style: { width: `${value === null ? 0 : value}%` } })),
+        h('span', { className: 'dsf-metric-val' }, text))
+    }
+
+    function statePill(tr, machine) {
+      if (machine.online === false) return { cls: 'err', text: tr('offline') }
+      if (machine.authed === false) return { cls: 'warn', text: tr('needAuth') }
+      return { cls: 'ok', text: tr('online') }
     }
 
     function OverviewCard({ machine, tr, onOpen }) {
       const panel = machine.panelOk === false ? null : machine
       const gpus = Array.isArray(panel?.gpus) ? panel.gpus : []
-      return h('div', { className: 'dsf-card' },
+      const state = statePill(tr, machine)
+      const sessions = machine.sessions
+      const running = sessions?.running ?? 0
+      const load = Array.isArray(panel?.load) ? panel.load.map((v) => (typeof v === 'number' ? v.toFixed(2) : '—')).join(' / ') : '—'
+      const disk = Array.isArray(panel?.disks) && panel.disks.length > 0 ? panel.disks[0] : null
+      return h('div', { className: `dsf-card${machine.online ? '' : ' offline'}` },
         h('div', { className: 'dsf-card-head' },
-          h('i', { className: `dsf-dot ${machine.online ? 'ok' : 'err'}` }),
+          h('i', { className: `dsf-dot ${state.cls === 'ok' ? 'ok' : state.cls === 'warn' ? 'auth' : 'err'}` }),
           h('div', { className: 'dsf-card-name' }, machine.name || machine.id),
-          h('span', { className: 'dsf-tag' }, machine.source === 'agent' ? tr('agent') : tr('noAgent')),
+          h('span', { className: `dsf-pill ${state.cls}` }, state.text),
+          machine.source === 'agent' ? h('span', { className: 'dsf-badge' }, tr('agent')) : null,
+          machine.dshVersion ? h('span', { className: 'dsf-badge quiet' }, `DSH ${machine.dshVersion}`) : null,
           h('button', { className: 'dsf-btn', onClick: () => onOpen?.(machine.id) }, tr('openDsh'))),
+        h('div', { className: 'dsf-statrow' },
+          h('span', { className: 'dsf-stat' }, `${tr('sessions')} `, h('b', null, String(sessions?.count ?? '—'))),
+          h('span', { className: `dsf-stat${running > 0 ? ' live' : ''}` }, `${tr('running')} `, h('b', null, String(running))),
+          h('span', { className: 'dsf-stat' }, `${tr('latency')} `, h('b', null, machine.latencyMs === null || machine.latencyMs === undefined ? '—' : `${machine.latencyMs}ms`)),
+          h('span', { className: 'dsf-stat' }, machine.hasDashboard === false ? tr('noPanel') : (panel === null ? tr('panelMissing') : tr('panelOk')))),
         panel === null
           ? h('div', { className: 'dsf-hint' }, machine.error || tr('noPanelData'))
           : h(React.Fragment, null,
-            h('div', { className: 'dsf-kv' }, h('span', null, tr('cpu')), h('b', null, `${Math.round(panel.cpuPct ?? 0)}%`)),
-            h('div', { className: 'dsf-kv' }, h('span', null, tr('mem')), h('b', null, `${formatGb(panel.memUsedGb)} / ${formatGb(panel.memTotalGb)} (${Math.round(panel.memPct ?? 0)}%)`)),
-            h('div', { className: 'dsf-kv' }, h('span', null, tr('load')), h('b', null, Array.isArray(panel.load) ? panel.load.map((v) => (typeof v === 'number' ? v.toFixed(2) : '—')).join(' / ') : '—')),
-            Array.isArray(panel.disks) && panel.disks.length > 0
-              ? h('div', { className: 'dsf-kv' }, h('span', null, `${tr('disk')} ${panel.disks[0].mount}`), h('b', null, `${formatGb(panel.disks[0].usedGb)} / ${formatGb(panel.disks[0].totalGb)} (${Math.round(panel.disks[0].pct ?? 0)}%)`))
-              : null,
+            metricRow(tr, tr('cpu'), `${Math.round(panel.cpuPct ?? 0)}%`, panel.cpuPct),
+            metricRow(tr, tr('mem'), `${Math.round(panel.memPct ?? 0)}% · ${formatGb(panel.memUsedGb)} / ${formatGb(panel.memTotalGb)}`, panel.memPct),
+            disk === null ? null : metricRow(tr, `${tr('disk')}`, `${Math.round(disk.pct ?? 0)}% · ${formatGb(disk.usedGb)} / ${formatGb(disk.totalGb)}`, disk.pct),
+            h('div', { className: 'dsf-kv' }, h('span', null, tr('load')), h('b', null, load)),
             gpus.length > 0
               ? h('div', { className: 'dsf-gpu' }, gpus.map((gpu, index) => gpuRow(tr, gpu, index, gpus.length)))
               : h('div', { className: 'dsf-gpu' }, tr('noPanelData'))))
@@ -713,19 +787,24 @@ window.__ModuleLoader__.load({
               `${aggTotal} ${tr('sessions')}${aggDevices > 0 ? ` · ${aggDevices} 台设备` : ''}`))),
           instances.map((instance) => h('button', {
             key: instance.id,
-            className: `dsf-item${instance.id === selected?.id ? ' on' : ''}`,
+            className: `dsf-item${instance.id === selected?.id ? ' on' : ''}${instance.online === false ? ' offline' : ''}`,
             onClick: () => setSelectedId(instance.id),
           },
           h('i', { className: `dsf-dot ${healthClass(instance)}` }),
           h('div', { className: 'dsf-item-main' },
-            h('div', { className: 'dsf-item-name' }, `${instance.name || instance.id}${instance.agent?.ok ? ' · agent' : ''}`),
-            h('div', { className: 'dsf-item-meta' }, [
-              healthText(instance, tr),
-              instance.sessions ? `${instance.sessions.count} ${tr('sessions')}` : null,
-              instance.sessions && instance.sessions.running > 0 ? `${instance.sessions.running} ${tr('running')}` : null,
-              instance.latencyMs !== null ? `${instance.latencyMs}ms` : null,
-              (instance.panelUrl ? (instance.panel?.ok ? tr('panelOk') : tr('panelMissing')) : tr('noPanel')),
-            ].filter((part) => part !== null).join(' · '))))),
+            h('div', { className: 'dsf-item-name' },
+              h('span', { className: 'dsf-item-title' }, instance.name || instance.id),
+              h('span', { className: `dsf-pill ${instance.online === false ? 'err' : instance.authed === false ? 'warn' : 'ok'}` }, healthText(instance, tr)),
+              instance.agent?.ok ? h('span', { className: 'dsf-badge' }, tr('agent')) : null),
+            h('div', { className: 'dsf-item-meta' },
+              instance.sessions && instance.sessions.running > 0
+                ? h('span', { className: 'dsf-pill live' }, `▶ ${instance.sessions.running} ${tr('running')}`)
+                : null,
+              instance.sessions ? h('span', null, `${instance.sessions.count} ${tr('sessions')}`) : null,
+              instance.latencyMs !== null && instance.latencyMs !== undefined
+                ? h('span', { className: `dsf-lat${instance.latencyMs > 300 ? ' slow' : instance.latencyMs > 120 ? ' ok' : ' fast'}` }, `${instance.latencyMs}ms`)
+                : null,
+              h('span', { className: 'dsf-meta-dim' }, instance.panelUrl ? (instance.panel?.ok ? tr('panelOk') : tr('panelMissing')) : tr('noPanel')))))),
           allSelected
             ? h('div', { className: 'dsf-sessions' },
               h('div', { className: 'dsf-sessions-head' }, (() => {
@@ -762,7 +841,9 @@ window.__ModuleLoader__.load({
                     if (instance !== undefined) openSessionFor(instance, entry)
                   },
                 },
-                h('i', { className: `dsf-dot${entry.running ? ' ok' : ''}` }),
+                entry.running
+                  ? h('span', { className: 'dsf-state running' }, h('i', { className: 'dsf-pulse' }), tr('running'))
+                  : h('span', { className: 'dsf-state idle' }, tr('idle')),
                 h('span', { className: 'dsf-run-instance' }, entry.instanceName || entry.instanceId),
                 entry.origin === 'subagent' ? h('span', { className: 'dsf-child' }, tr('childTag')) : null,
                 h('span', { className: 'dsf-session-title' }, entry.label || entry.title || String(entry.sessionId).slice(-10)),
@@ -774,7 +855,7 @@ window.__ModuleLoader__.load({
                 onClick: () => setSessionCollapsed((value) => !value),
                 title: sessionCollapsed ? tr('expandSessions') : tr('collapseSessions'),
               },
-              h('span', null, `${tr('sessionsTitle')} · ${sessionCount}${sessionList?.total !== undefined && sessionCount !== sessionList.total ? ` / ${sessionList.total}` : ''}${sessionError ? ' ⚠' : ''}`),
+              h('span', null, `${tr('sessionsTitle')} · ${sessionCount}${sessionList?.total !== undefined && sessionCount !== sessionList.total ? ` / ${sessionList.total}` : ''}${sessionList?.running > 0 ? ` · ${sessionList.running} ${tr('running')}` : ''}${sessionError ? ' ⚠' : ''}`),
               h('span', { className: 'dsf-sessions-caret' }, sessionCollapsed ? '▸' : '▾')),
               sessionCollapsed
                 ? null
@@ -802,7 +883,9 @@ window.__ModuleLoader__.load({
                       title: `${session.sessionId}\n${tr('openSessionHint')}`,
                       onClick: () => openSessionViewer(session),
                     },
-                    h('i', { className: `dsf-dot${session.running ? ' ok' : ''}` }),
+                    session.running
+                      ? h('span', { className: 'dsf-state running' }, h('i', { className: 'dsf-pulse' }), tr('running'))
+                      : h('span', { className: 'dsf-state idle' }, tr('idle')),
                     session.origin === 'subagent' ? h('span', { className: 'dsf-child' }, tr('childTag')) : null,
                     h('span', { className: 'dsf-session-title' }, session.label || session.title || String(session.sessionId).slice(-10)),
                     h('span', { className: 'dsf-session-age' }, sessionAge(session.updatedAt))))))
