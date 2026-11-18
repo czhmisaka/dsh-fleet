@@ -20,7 +20,7 @@ import { homedir, hostname } from 'node:os'
 import { join } from 'node:path'
 import { startProxy } from './host/proxy.js'
 import {
-  agentCall, callRemote, contextOverview, exchangeToken, fetchTokenViaSsh, normalizePanel, panelRaw,
+  agentCall, callRemote, contextDetail, contextOverview, exchangeToken, fetchTokenViaSsh, normalizePanel, panelRaw,
   panelStatus, probeInstance, remoteSessions,
 } from './host/remote.js'
 
@@ -53,6 +53,7 @@ const instanceSchema = z.object({
   panelPort: z.natural().default(0),
   agentUrl: z.string().default(''),
   enabled: z.boolean().default(true),
+  budgetDailyUsd: z.number().default(0),
 })
 
 /** Durable fleet configuration; every field is live so edits need no restart. */
@@ -64,6 +65,8 @@ export const Config = z.object({
   pollMs: z.natural().default(5000).volatile(),
   portBase: z.natural().default(37800).volatile(),
   panelLocalUrl: z.string().default('http://127.0.0.1:40005').volatile(),
+  budgetDailyUsd: z.number().default(0).volatile(),
+  budgetWarnPct: z.natural().default(80).volatile(),
 })
 
 /** Bind the fleet runtime to the plugin fiber. */
@@ -95,6 +98,7 @@ class Fleet {
     this.usageCache = new Map()
     this.usageDaysCache = new Map()
     this.usageBusy = new Set()
+    this.usageContextCache = undefined
     this.ns = NS
     this.config = this.baseConfig
     this.started = false
@@ -492,7 +496,7 @@ class Fleet {
         !== JSON.stringify([previous.instances, previous.agentKey, previous.role, previous.roles, previous.portBase])
       const pollChanged = (Number(next.pollMs) || 5000) !== (this.appliedPollMs || 5000)
       this.config = next
-      if (changed) await this.reconcile()
+      if (changed) { this.usageCache.clear(); await this.reconcile() }
       if (pollChanged) {
         const interval = Math.max(2000, Number(next.pollMs) || 5000)
         if (this.healthTimer !== null) clearInterval(this.healthTimer)
@@ -607,8 +611,7 @@ class Fleet {
         page: 0,
       }, 8000)
       const summary = summaryValue?.summary ?? null
-      const allItems = Array.isArray(pageValue?.page?.items) ? pageValue.page.items : []
-      const items = allItems.filter((item) => typeof item.updatedAt !== 'number' || item.updatedAt >= start)
+      const items = Array.isArray(pageValue?.page?.items) ? pageValue.page.items : []
       const models = new Map()
       for (const item of items) {
         const model = typeof item.model === 'string' && item.model !== '' ? item.model : '—'
@@ -734,19 +737,43 @@ class Fleet {
       let priced = true
       let sessions = 0
       let running = 0
+      let totalsCost = null
       for (const entry of instances) {
         tokens += entry.summary?.tokens ?? 0
-        if (typeof entry.summary?.costUsd === 'number') cost += entry.summary.costUsd
-        else if (entry.summary !== null) priced = false
+        if (typeof entry.summary?.costUsd === 'number') {
+          cost += entry.summary.costUsd
+          totalsCost = (totalsCost ?? 0) + entry.summary.costUsd
+        } else if (entry.summary !== null) priced = false
         sessions += entry.summary?.sessions ?? 0
         running += entry.topSessions.filter((session) => session.running).length
+      }
+      const warnPct = Number(this.config.budgetWarnPct) || 80
+      const globalBudget = Number(this.config.budgetDailyUsd) || 0
+      const warnings = []
+      const budgetByInstance = {}
+      for (const entry of instances) {
+        const configured = entry.id === undefined ? 0 : Number(this.runtimes.get(entry.id)?.state.instance.budgetDailyUsd) || 0
+        budgetByInstance[entry.id] = configured
+        // Explicit per-instance budgets get their own warning; otherwise the
+        // global warning below already covers it (avoids duplicate banners).
+        const limit = configured
+        if (limit <= 0) continue
+        const spent = entry.summary?.costUsd
+        if (typeof spent !== 'number') continue
+        const pct = Math.round((spent / limit) * 100)
+        if (pct >= warnPct) warnings.push({ instanceId: entry.id, name: entry.name, kind: 'budget', spent, limit, pct, exceeded: spent > limit })
+      }
+      if (globalBudget > 0 && typeof totalsCost === 'number') {
+        const pct = Math.round((totalsCost / globalBudget) * 100)
+        if (pct >= warnPct) warnings.push({ instanceId: null, name: 'all', kind: 'budget', spent: totalsCost, limit: globalBudget, pct, exceeded: totalsCost > globalBudget })
       }
       const value = {
         ok: true,
         generatedAt: Date.now(),
         range,
-        totals: { tokens, costUsd: priced ? cost : null, sessions, running, priced },
+        totals: { tokens, costUsd: priced ? cost : null, sessions, running, priced, budget: globalBudget > 0 ? { usd: globalBudget, spent: totalsCost, warnPct } : null },
         instances,
+        warnings,
       }
       this.usageCache.set(key, { at: Date.now(), value })
     } finally {
@@ -860,6 +887,61 @@ class Fleet {
     })
     register({
       kind: 'exact',
+      path: '/fleet/usage/context',
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        this.lastClientAt = Date.now()
+        try {
+          const cached = this.usageContextCache
+          if (cached !== undefined && Date.now() - cached.at < 30000) {
+            json(res, { ...cached.value, stale: false })
+            return
+          }
+          const sessions = []
+          const errors = []
+          await Promise.all([...this.runtimes.values()].map(async (runtime) => {
+            const state = runtime.state
+            const instance = state.instance
+            if (!state.authed) return
+            try {
+              const items = await this.fullSessions(runtime)
+              const running = items.filter((item) => item.running === true && item.origin !== 'subagent')
+              for (const item of running.slice(0, 12)) {
+                try {
+                  const detail = await contextDetail(instance.dshUrl, state.cookie, item.sessionId, 6000)
+                  const head = detail?.head ?? detail
+                  const window = typeof head?.contextWindow === 'number' ? head.contextWindow : null
+                  const used = typeof head?.current?.total === 'number' ? head.current.total : null
+                  sessions.push({
+                    instanceId: instance.id,
+                    instanceName: instance.name || instance.id,
+                    sessionId: item.sessionId,
+                    title: typeof item.projections?.values?.title === 'string' ? item.projections.values.title : '',
+                    cwd: item.cwd ?? null,
+                    model: typeof head?.model === 'string' ? head.model : null,
+                    contextWindow: window,
+                    contextUsedTokens: used,
+                    contextPct: window !== null && used !== null && window > 0 ? Math.round((used / window) * 1000) / 10 : null,
+                  })
+                } catch (error) {
+                  errors.push({ instanceId: instance.id, sessionId: item.sessionId, error: macMessage(error) })
+                }
+              }
+            } catch (error) {
+              errors.push({ instanceId: instance.id, error: macMessage(error) })
+            }
+          }))
+          sessions.sort((a, b) => (b.contextPct ?? 0) - (a.contextPct ?? 0))
+          const value = { ok: true, generatedAt: Date.now(), sessions, errors }
+          this.usageContextCache = { at: Date.now(), value }
+          json(res, { ...value, stale: false })
+        } catch (error) {
+          json(res, { ok: false, error: macMessage(error) }, 500)
+        }
+      },
+    })
+    register({
+      kind: 'exact',
       path: '/fleet/usage',
       handler: async (req, res) => {
         if (!guard(req, res)) return
@@ -933,6 +1015,8 @@ class Fleet {
             panelLocalUrl: this.config.panelLocalUrl ?? 'http://127.0.0.1:40005',
             pollMs: Number(this.config.pollMs) || 5000,
             portBase: Number(this.config.portBase) || 37800,
+            budgetDailyUsd: Number(this.config.budgetDailyUsd) || 0,
+            budgetWarnPct: Number(this.config.budgetWarnPct) || 80,
           })
           return
         }
@@ -950,9 +1034,12 @@ class Fleet {
             ...(Number(patch.pollMs) >= 2000 ? { pollMs: Number(patch.pollMs) } : {}),
             ...(Number(patch.portBase) > 0 ? { portBase: Number(patch.portBase) } : {}),
             ...(typeof patch.panelLocalUrl === 'string' && patch.panelLocalUrl !== '' ? { panelLocalUrl: patch.panelLocalUrl } : {}),
+            ...(Number(patch.budgetDailyUsd) >= 0 ? { budgetDailyUsd: Number(patch.budgetDailyUsd) } : {}),
+            ...(Number(patch.budgetWarnPct) >= 1 && Number(patch.budgetWarnPct) <= 100 ? { budgetWarnPct: Number(patch.budgetWarnPct) } : {}),
           })
           this.config = this.readSettings()
           await this.reconcile()
+          this.usageCache.clear()
           json(res, { ok: true })
         } catch (error) {
           json(res, { ok: false, error: macMessage(error) }, 400)

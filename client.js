@@ -132,6 +132,14 @@ window.__ModuleLoader__.load({
         usageStale: '刷新中',
         usageCoverageStarting: '历史用量正在反算…',
         usageCoveragePartial: '部分会话尚未统计',
+        usageBudget: '预算',
+        usageAllDevices: '全部设备',
+        usageContextTitle: '上下文压力',
+        usageContextNote: '运行中会话的上下文占用（最后一轮请求 / 窗口上限）',
+        usageContextEmpty: '没有可统计上下文的运行中会话',
+        usageNewSession: '新会话',
+        budgetDailyUsd: '每日预算（USD，0=不限）',
+        budgetWarnPct: '预算告警阈值（%）',
         usageSessionNote: '会话 tokens 为累计值；时间范围只筛选该范围内活跃的会话',
         settingsHint: '实例配置保存在本机 profile 的 dsh-fleet 条目里（由 dsh 配置编辑器写入 cordis.patch.yml），代理端口只监听 127.0.0.1。',
         pausing: '仅当前视图挂载 iframe，切走即卸载，避免多份 DSH 同时跑。',
@@ -254,6 +262,14 @@ window.__ModuleLoader__.load({
         usageStale: 'refreshing',
         usageCoverageStarting: 'Backfilling historical usage…',
         usageCoveragePartial: 'Some sessions are not counted yet',
+        usageBudget: 'Budget',
+        usageAllDevices: 'All devices',
+        usageContextTitle: 'Context pressure',
+        usageContextNote: 'Context occupancy of running sessions (last request / window)',
+        usageContextEmpty: 'No running session with context data',
+        usageNewSession: 'New session',
+        budgetDailyUsd: 'Daily budget (USD, 0 = none)',
+        budgetWarnPct: 'Budget warning threshold (%)',
         usageSessionNote: 'Session tokens are lifetime totals; the range only selects sessions active inside it.',
         settingsHint: 'Instance config lives in this profile\'s dsh-fleet entry (written to cordis.patch.yml by the dsh config editor); proxy ports bind 127.0.0.1 only.',
         pausing: 'Only the active view keeps its iframe mounted, so multiple DSH apps never run at once.',
@@ -336,6 +352,13 @@ window.__ModuleLoader__.load({
 @keyframes dsf-pulse{0%,100%{opacity:1}50%{opacity:.35}}
 @media (prefers-reduced-motion: reduce){.dsf-pulse{animation:none}}
 
+
+.dsf-warnings{display:flex;flex-direction:column;gap:4px}
+.dsf-warning{font-size:11.5px;padding:6px 10px;border-radius:8px;background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.3)}
+.dsf-warning.over{background:rgba(248,113,113,.12);color:#f87171;border-color:rgba(248,113,113,.35)}
+.dsf-usage-ctx-row{display:grid;grid-template-columns:96px minmax(0,1fr) 140px minmax(80px,1fr) 52px 128px 72px;gap:8px;align-items:center;padding:5px 4px;border-bottom:1px solid var(--dsw-alias-border-l1)}
+.dsf-usage-ctx-detail{font-size:10.5px;color:var(--dsw-alias-label-secondary);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dsf-btn.small{font-size:10.5px;padding:2px 8px}
 .dsf-usage{position:absolute;inset:0;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
 .dsf-usage-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .dsf-usage-title{font-size:13px;font-weight:650}
@@ -636,12 +659,13 @@ window.__ModuleLoader__.load({
     function usageCoverageLabel(tr, coverage) {
       if (coverage === null || coverage === undefined) return null
       if (coverage.complete === true) return null
-      if (coverage.total === 0) return tr('usageCoverageStarting')
-      return tr('usageCoveragePartial')
+      if (coverage.running === true || coverage.total > 0) return tr('usageCoverageStarting')
+      if (coverage.remaining > 0) return tr('usageCoveragePartial')
+      return null
     }
 
     /** Cross-device consumption view: totals, per-device cards, models and top sessions. */
-    function UsageView({ tr, data, error, range, setRange, onOpenSession }) {
+    function UsageView({ tr, data, error, range, setRange, onOpenSession, context, onNewSession }) {
       const totals = data?.totals ?? null
       const instances = Array.isArray(data?.instances) ? data.instances : []
       const modelMap = new Map()
@@ -661,6 +685,9 @@ window.__ModuleLoader__.load({
         .sort((a, b) => b.tokens - a.tokens)
         .slice(0, 50)
       const maxDay = Math.max(1, ...instances.flatMap((instance) => (instance.days ?? []).slice(-14).map((day) => day.tokens ?? 0)))
+      const contextSessions = Array.isArray(context?.sessions) ? context.sessions : []
+      const warnings = Array.isArray(data?.warnings) ? data.warnings : []
+      const budget = totals?.budget ?? null
 
       const rangeKeys = ['today', '7d', '30d']
       const rangeLabel = { today: 'usageRangeToday', '7d': 'usageRange7d', '30d': 'usageRange30d' }
@@ -673,7 +700,13 @@ window.__ModuleLoader__.load({
         }, tr(rangeLabel[key])))),
         h('div', { className: 'dsf-usage-spacer' }),
         data ? h('span', { className: 'dsf-usage-meta' }, `${new Date(data.generatedAt).toLocaleTimeString()}${data.stale ? ` · ${tr('usageStale')}` : ''}`) : null,
-        h('button', { className: 'dsf-btn', onClick: () => setRange(range) }, tr('refresh')))
+        h('button', { className: 'dsf-btn', onClick: () => setRange(range) }, tr('refresh')),
+        budget === null ? null : (() => {
+          const pct = typeof budget.spent === 'number' && budget.usd > 0 ? Math.round((budget.spent / budget.usd) * 100) : null
+          const cls = pct !== null && pct >= 100 ? 'err' : pct !== null && pct >= budget.warnPct ? 'warn' : 'ok'
+          return h('span', { className: `dsf-pill ${cls}` },
+            `${tr('usageBudget')} ${formatUsd(budget.spent ?? 0)} / ${formatUsd(budget.usd)}${pct === null ? '' : ` · ${pct}%`}`)
+        })())
 
       const totalsBlock = h('div', { className: 'dsf-usage-totals' },
         h('div', { className: 'dsf-usage-kpi' }, h('span', null, tr('usageTokens')), h('b', null, formatTokens(totals?.tokens))),
@@ -734,6 +767,27 @@ window.__ModuleLoader__.load({
       session.running
         ? h('span', { className: 'dsf-state running' }, h('i', { className: 'dsf-pulse' }), tr('running'))
         : h('i', { className: 'dsf-dot' })))
+      const contextBlock = h('div', { className: 'dsf-usage-section' },
+        h('div', { className: 'dsf-usage-section-title' }, `${tr('usageContextTitle')} · ${contextSessions.length}`),
+        h('div', { className: 'dsf-usage-note' }, tr('usageContextNote')),
+        contextSessions.length === 0
+          ? h('div', { className: 'dsf-empty' }, tr('usageContextEmpty'))
+          : contextSessions.map((session) => {
+            const pct = session.contextPct
+            const level = pct === null ? 'cool' : pct >= 85 ? 'hot' : pct >= 70 ? 'warm' : 'cool'
+            return h('div', { className: 'dsf-usage-ctx-row', key: `${session.instanceId}:${session.sessionId}` },
+              h('span', { className: 'dsf-usage-cell-device' }, session.instanceName),
+              h('span', { className: 'dsf-usage-cell-title', title: session.title }, session.title || String(session.sessionId).slice(-10)),
+              h('span', { className: 'dsf-usage-cell-model' }, session.model ?? '—'),
+              h('div', { className: `dsf-meter ${level}` }, h('i', { style: { width: `${Math.max(2, Math.min(100, pct ?? 0))}%` } })),
+              h('span', { className: 'dsf-usage-cell-tokens' }, pct === null ? '—' : `${pct}%`),
+              h('span', { className: 'dsf-usage-ctx-detail' }, session.contextWindow === null ? '' : `${formatTokens(session.contextUsedTokens)} / ${formatTokens(session.contextWindow)}`),
+              h('button', {
+                className: 'dsf-btn small',
+                onClick: (event) => { event.stopPropagation(); onNewSession(session.instanceId, session.cwd) },
+              }, tr('usageNewSession')))
+          }))
+
       const sessionsBlock = h('div', { className: 'dsf-usage-section' },
         h('div', { className: 'dsf-usage-section-title' }, `${tr('usageTopSessions')} · ${sessions.length}`),
         h('div', { className: 'dsf-usage-note' }, tr('usageSessionNote')),
@@ -741,12 +795,16 @@ window.__ModuleLoader__.load({
           ? h('div', { className: 'dsf-empty' }, tr('usageNoSessions'))
           : h('div', { className: 'dsf-usage-table' }, rows))
 
+      const warningBanner = warnings.length === 0 ? null : h('div', { className: 'dsf-warnings' },
+        warnings.map((warning, index) => h('div', { key: index, className: `dsf-warning${warning.exceeded ? ' over' : ''}` },
+          `${warning.instanceId === null ? tr('usageAllDevices') : warning.name} · ${tr('usageBudget')} ${formatUsd(warning.spent)} / ${formatUsd(warning.limit)} (${warning.pct}%)`)))
       return h('div', { className: 'dsf-usage' },
         head,
+        warningBanner,
         error !== null ? h('div', { className: 'dsf-err' }, error) : null,
         data === null
           ? h('div', { className: 'dsf-empty' }, tr('usageLoading'))
-          : h(React.Fragment, null, totalsBlock, devicesBlock, modelsBlock, sessionsBlock))
+          : h(React.Fragment, null, totalsBlock, devicesBlock, contextBlock, modelsBlock, sessionsBlock))
     }
 
     function Panel() {
@@ -767,6 +825,7 @@ window.__ModuleLoader__.load({
       })
       const [usageData, setUsageData] = useState(null)
       const [usageError, setUsageError] = useState(null)
+      const [usageContext, setUsageContext] = useState(null)
       const [showChildren, setShowChildren] = useState(() => {
         try { return localStorage.getItem('dsh-fleet.showChildren') === '1' } catch { return false }
       })
@@ -852,11 +911,21 @@ window.__ModuleLoader__.load({
         }
         const onVisible = () => { if (typeof document !== 'undefined' && !document.hidden) void load() }
         if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisible)
+        const loadContext = async () => {
+          if (typeof document !== 'undefined' && document.hidden) return
+          try {
+            const value = await apiGet('fleet/usage/context')
+            if (!cancelled && value.ok) setUsageContext(value)
+          } catch { /* context is best-effort */ }
+        }
         void load()
+        void loadContext()
         const timer = setInterval(load, 30000)
+        const contextTimer = setInterval(loadContext, 30000)
         return () => {
           cancelled = true
           clearInterval(timer)
+          clearInterval(contextTimer)
           if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisible)
         }
       }, [view, usageRange])
@@ -1197,6 +1266,19 @@ window.__ModuleLoader__.load({
                   const instance = instances.find((item) => item.id === instanceId)
                   if (instance !== undefined) openSessionFor(instance, session)
                 },
+                context: usageContext,
+                onNewSession: async (instanceId, cwd) => {
+                  const instance = instances.find((item) => item.id === instanceId)
+                  if (instance === undefined) return
+                  try {
+                    const value = await apiPost('fleet/launch', { instanceId, cwd: cwd ?? '', provider: '', model: '' })
+                    if (value.ok) {
+                      setSelectedId(instanceId)
+                      openSessionFor(instance, { sessionId: value.sessionId, title: '' })
+                      setAggRefresh((current) => current + 1)
+                    }
+                  } catch { /* surfaced by the viewer/usage refresh */ }
+                },
               })
               : view === 'overview'
               ? h('div', { className: 'dsf-cards' },
@@ -1397,6 +1479,8 @@ window.__ModuleLoader__.load({
             pollMs: draft.pollMs,
             portBase: draft.portBase,
             panelLocalUrl: draft.panelLocalUrl,
+            budgetDailyUsd: draft.budgetDailyUsd,
+            budgetWarnPct: draft.budgetWarnPct,
           })
           await onSaved()
         } catch (failure) {
@@ -1442,7 +1526,9 @@ window.__ModuleLoader__.load({
             h('label', { className: 'dsf-field' }, tr('dshPort'),
               h('input', { className: 'dsf-input', value: String(instance.dshPort ?? 0), onChange: (event) => update(index, 'dshPort', Number(event.target.value) || 0) })),
             h('label', { className: 'dsf-field' }, tr('panelPort'),
-              h('input', { className: 'dsf-input', value: String(instance.panelPort ?? 0), onChange: (event) => update(index, 'panelPort', Number(event.target.value) || 0) }))),
+              h('input', { className: 'dsf-input', value: String(instance.panelPort ?? 0), onChange: (event) => update(index, 'panelPort', Number(event.target.value) || 0) })),
+            h('label', { className: 'dsf-field' }, tr('budgetDailyUsd'),
+              h('input', { className: 'dsf-input', value: String(instance.budgetDailyUsd ?? 0), onChange: (event) => update(index, 'budgetDailyUsd', Number(event.target.value) || 0) }))),
           h('div', { className: 'dsf-row' },
             h('label', { className: 'dsf-field', style: { flexDirection: 'row', alignItems: 'center', gap: '6px' } },
               h('input', { type: 'checkbox', checked: instance.enabled !== false, onChange: (event) => update(index, 'enabled', event.target.checked) }),
@@ -1459,7 +1545,11 @@ window.__ModuleLoader__.load({
           h('label', { className: 'dsf-field' }, tr('portBase'),
             h('input', { className: 'dsf-input', value: String(draft.portBase ?? 37800), onChange: (event) => setDraft({ ...draft, portBase: Number(event.target.value) || 37800 }) })),
           h('label', { className: 'dsf-field' }, tr('panelLocalUrl'),
-            h('input', { className: 'dsf-input', value: draft.panelLocalUrl ?? '', onChange: (event) => setDraft({ ...draft, panelLocalUrl: event.target.value }) }))))
+            h('input', { className: 'dsf-input', value: draft.panelLocalUrl ?? '', onChange: (event) => setDraft({ ...draft, panelLocalUrl: event.target.value }) })),
+          h('label', { className: 'dsf-field' }, tr('budgetDailyUsd'),
+            h('input', { className: 'dsf-input', value: String(draft.budgetDailyUsd ?? 0), onChange: (event) => setDraft({ ...draft, budgetDailyUsd: Number(event.target.value) || 0 }) })),
+          h('label', { className: 'dsf-field' }, tr('budgetWarnPct'),
+            h('input', { className: 'dsf-input', value: String(draft.budgetWarnPct ?? 80), onChange: (event) => setDraft({ ...draft, budgetWarnPct: Number(event.target.value) || 80 }) }))))
     }
 
     function SettingsSection() {
@@ -1478,6 +1568,8 @@ window.__ModuleLoader__.load({
             pollMs: value.pollMs ?? 5000,
             portBase: value.portBase ?? 37800,
             panelLocalUrl: value.panelLocalUrl ?? 'http://127.0.0.1:40005',
+            budgetDailyUsd: value.budgetDailyUsd ?? 0,
+            budgetWarnPct: value.budgetWarnPct ?? 80,
           })
           setError(null)
         } catch (failure) {
@@ -1497,6 +1589,8 @@ window.__ModuleLoader__.load({
             pollMs: draft.pollMs,
             portBase: draft.portBase,
             panelLocalUrl: draft.panelLocalUrl,
+            budgetDailyUsd: draft.budgetDailyUsd,
+            budgetWarnPct: draft.budgetWarnPct,
           })
           setSaved('ok')
           await load()

@@ -220,3 +220,27 @@ export async function contextOverview(dshUrl, cookie, body, timeoutMs = 8000) {
   }
   return parsed.value
 }
+
+/**
+ * Read the per-session context occupancy from dsh-context (`head` only).
+ * @param {string} dshUrl - remote origin.
+ * @param {string} cookie - authenticated browser cookie.
+ * @param {string} sessionId - target session.
+ * @param {number} timeoutMs - request budget.
+ * @returns {Promise<object>} `{ model, contextWindow, current: { total } }`.
+ */
+export async function contextDetail(dshUrl, cookie, sessionId, timeoutMs = 8000) {
+  const raw = JSON.stringify({ sessionId, head: true })
+  const response = await requestWithHeaders(`${dshUrl}/api/dsh-context/detail`, {
+    method: 'POST',
+    headers: { cookie, 'content-type': 'application/json', 'content-length': Buffer.byteLength(raw) },
+    body: raw,
+    timeoutMs,
+  })
+  if (response.status !== 200) throw new Error(`dsh-context detail: HTTP ${String(response.status)}`)
+  const parsed = JSON.parse(response.text)
+  if (parsed?.ok !== true || parsed.value === null || typeof parsed.value !== 'object') {
+    throw new Error('dsh-context detail: invalid response')
+  }
+  return parsed.value
+}
