@@ -186,7 +186,14 @@ class Fleet {
   }
 
   /** Reconcile declared instances with running proxy runtimes. */
-  async reconcile() {
+  reconcile() {
+    this.reconcileChain = (this.reconcileChain ?? Promise.resolve())
+      .then(() => this.reconcileOnce())
+      .catch((error) => this.log(`reconcile failed: ${macMessage(error)}`))
+    return this.reconcileChain
+  }
+
+  async reconcileOnce() {
     if (this.stopping) return
     this.lastReconcileAt = Date.now()
     if (!this.masterEnabled()) {
@@ -644,6 +651,9 @@ class Fleet {
             }
           }
           this.sessionsFullCache.delete(runtime.state.instance.id)
+          for (const key of [...this.sessionsCache.keys()]) {
+            if (key.startsWith(`${runtime.state.instance.id}|`)) this.sessionsCache.delete(key)
+          }
           json(res, { ok: true, sessionId, modelError })
         } catch (error) {
           json(res, { ok: false, error: macMessage(error) }, 400)
