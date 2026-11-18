@@ -1,56 +1,56 @@
-**English** | [中文](README.md)
+<div align="center">
 
-# dsh-fleet — multi-host DSH panel
+<img src="docs/assets/banner.svg" alt="dsh-fleet" width="100%">
 
-Manage DeepSeek Harness (DSH) instances on several machines from a single **Fleet**
-page: sessions, live status and `:40005` dashboards per host, one cross-device
-session list, and a launch dialog that picks device / folder / model.
+**One panel for every DeepSeek Harness instance you run.**
+Cross-host sessions / live dashboards / usage & context pressure / one-click launch — all inside the DSH sidebar.
 
-## Compatibility
+[![DSH](https://img.shields.io/badge/DSH-0.2.2--rc.1-34d399?style=flat-square)](https://github.com/deepseek-ai/deepseek-harness)
+[![License](https://img.shields.io/badge/license-MIT-22d3ee?style=flat-square)](LICENSE)
+[![Plugin](https://img.shields.io/badge/plugin-bundle-a78bfa?style=flat-square)](https://github.com/czhmisaka/dsh-fleet)
 
-| Item | Requirement |
-|---|---|
-| DSH | **0.2.2-rc.1** — tested on several Linux and macOS hosts. Built on the `dsh.bundle.patch` + `dsh.client.platform: web` plugin mechanism, so the 0.2.x line should work; **0.1.x is untested** |
-| Node | ≥ 22 (match the Node bundled with DSH) |
-| Plugin location | DSH web profile: `~/.dsh/profiles/web/` |
-| Browser | **Chrome / Edge** recommended. Embedded dashboards and remote DSH viewers load through `http://localhost:<port>` so the browser gives them a separate site/process and heavy pages cannot freeze the panel; Safari / Firefox lack that isolation — use “Open dashboard” in a new tab there |
-| Upstream protocol | **http only** (https upstreams are not supported yet) |
-| Optional plugin | The Usage view needs `dsh-context` (Context Insights) on each host for cost / cache-hit / context-window data; without it the view degrades to tokens only |
-| OS | Linux / macOS (no restriction on master or agent hosts) |
+[**Quick start**](#quick-start) · [**Features**](#features) · [**Architecture**](#architecture) · [**Config**](#configuration) · [**FAQ**](#faq) · [中文](README.md)
 
-DSH capabilities used (all verified on 0.2.2-rc.1): `ctx.settings`, `ctx.credentials`,
-`ctx.webServer.register`, `ctx.connection.requestRejection`, slots
-`sidebar.panellist` / `main` / `settings.section`, `uiWorkspace.openSession`,
-`layout.toggleSidebar`, `session/list`, `session/create`, `session/selectModel`,
-`session/modelCatalog`.
+</div>
 
-## Architecture
+<img src="docs/assets/preview.svg" alt="dsh-fleet UI preview" width="100%">
 
-```
-browser ── Fleet panel (on the master's DSH page)
-            │  /fleet/* local routes
-            ├─ loopback proxy per instance (127.0.0.1:<dshPort>) ──→ remote DSH web :3080
-            ├─ loopback proxy per instance (127.0.0.1:<panelPort>) → remote :40005 dashboard
-            └─ /fleet-agent/* (X-Fleet-Key) ───────────────────────→ agent role on each slave
-```
+## Why dsh-fleet
 
-- **master** runs the panel, proxies and aggregation. The browser only ever talks to loopback ports on the master.
-- **agent** is installed in each managed DSH and exposes four read-only endpoints (`ping / info / sessions / panel/status`) guarded by a shared `agentKey`.
-- Remote launch tokens rotate on every slave restart; the master stores the exchanged cookie in `ctx.credentials` (`dsh-fleet/<instanceId>`) and never hands it to the browser. With `ssh` configured it refreshes the token from the slave log automatically.
+Once DSH grows from one machine to a Mac plus a GPU server plus a mini-PC, three things get painful:
 
-## Install
+- **Tab-hopping**: every host has its own :3080 — sessions, dashboards and models live apart.
+- **No overview**: is that job running, and on which host?
+- **No cost picture**: tokens, cost, cache hit and context windows are scattered across per-host plugins.
+
+dsh-fleet pulls those into one sidebar page: **one master aggregates, slaves only report**, and the browser only ever talks to loopback ports on the master.
+
+## Features
+
+| | Feature | Details |
+|---|---|---|
+| 🖥️ | **Instance rail** | online / auth / latency / dashboard state and running count, collapsible |
+| 📋 | **All sessions** | cross-host list, running first, device tags, search + running filter, subagent support |
+| ⚡ | **In-panel viewer** | open a remote session in the panel; the booted app is reused, no reload per switch |
+| 📊 | **Embedded dashboards** | each host's `:40005` page in an iframe with its own process, fullscreen / new-tab |
+| 🚀 | **Launch session** | pick device / folder / model and create it on that host |
+| 💰 | **Usage** | tokens, cost, cache hit and sessions for today / 7d / 30d by device, model and session |
+| 🌡️ | **Context pressure** | window occupancy bars for running sessions (70% yellow / 85% red) + one-click new session |
+| 🎯 | **Budgets** | per-device or global daily USD budget with thresholds and warnings |
+| 🔐 | **Secure by default** | remote cookies stay in the master credential store; proxies bind `127.0.0.1` and require a key |
+| ⚙️ | **Master / agent roles** | master runs panel + proxies; agents expose read-only `/fleet-agent/*` behind a shared key |
+
+## Quick start
 
 ### 1. master (the machine whose browser you use)
 
 ```bash
-# Option A: install this directory through plugin_manager
-plugin_manager → install_bundle → pick this directory
-
-# Option B: copy into the profile manually
-cp -R dsh-fleet ~/.dsh/profiles/web/plugins/dsh-fleet
+git clone https://github.com/czhmisaka/dsh-fleet.git
+plugin_manager → install_bundle → pick the dsh-fleet directory
+# or: cp -R dsh-fleet ~/.dsh/profiles/web/plugins/
 ```
 
-Insert the profile row (or let the plugin manager write it):
+Add to `~/.dsh/profiles/web/cordis.patch.yml` (or let the plugin manager write it):
 
 ```yaml
 - insert:
@@ -62,18 +62,18 @@ Insert the profile row (or let the plugin manager write it):
         instances: []
 ```
 
-Restart that DSH web process (a source checkout must be rebuilt first). A **Fleet** entry appears in the sidebar.
+Restart the DSH web process; a **Fleet** entry appears in the sidebar.
 
-### 2. agent (every managed machine)
+### 2. agent (every managed host)
 
 ```bash
-# 1) copy the plugin
 scp -r dsh-fleet <host>:~/.dsh/profiles/web/plugins/
-# 2) npm-installed DSH needs the vendored schema library linked into the profile
+
+# npm-installed DSH needs the vendored schema library linked into the profile
 ssh <host> 'mkdir -p ~/.dsh/profiles/web/node_modules/@deepseek-ai && \
   ln -sfn $(dirname $(readlink -f $(command -v dsh)))/node_modules/@deepseek-ai/schemastery \
          ~/.dsh/profiles/web/node_modules/@deepseek-ai/schemastery'
-# 3) append to the profile patch (mode 0600)
+
 ssh <host> 'cat >> ~/.dsh/profiles/web/cordis.patch.yml <<PATCH
 
 - insert:
@@ -82,75 +82,93 @@ ssh <host> 'cat >> ~/.dsh/profiles/web/cordis.patch.yml <<PATCH
       config:
         role: agent
         roles: [agent]
-        agentKey: "<same shared key as the master>"
+        agentKey: "<shared key>"
         panelLocalUrl: http://127.0.0.1:40005
 PATCH'
-# 4) restart that DSH web process
 ```
 
-The agent only reads session summaries and dashboard state; it opens no proxy ports.
+> The Usage view needs [`dsh-context`](https://github.com/bowenliang123/dsh-context) (Context Insights) on each host. Without it the view degrades to *tokens only*; install it and run a backfill to get cost / cache / context data.
+
+### 3. Add hosts
+
+In the panel, rail bottom → **Add** with name, DSH URL, dashboard URL, SSH and ports. Hosts with SSH configured renew their token automatically after a restart.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  B["Browser<br/>one panel"] --> M["master DSH<br/>/fleet/*"]
+  M --> P1["loopback proxy<br/>127.0.0.1:37801"]
+  M --> P2["loopback proxy<br/>127.0.0.1:37803"]
+  M --> A["/fleet-agent/*"]
+  P1 --> D1["remote DSH :3080"]
+  P2 --> D2["remote DSH :3080"]
+  A --> S1["agent role<br/>ping/info/sessions/panel"]
+  D1 --> U1["dsh-context :40005"]
+  D2 --> U2["dsh-context :40005"]
+```
+
+- Every instance gets its own origin on the master (`127.0.0.1:<port>`), so localStorage/cookies are isolated.
+- The remote cookie is injected by the master proxy; the browser only receives loopback URLs carrying a one-time key.
+- Embedded pages are loaded via `localhost` so the browser gives them a separate process and heavy dashboards cannot freeze the panel.
 
 ## Configuration
 
-Everything lives on the `dsh-fleet` profile entry and can be edited in **Settings → Fleet**.
+Everything lives on the `dsh-fleet` entry, editable in **Settings → Fleet**:
 
-| Field | Meaning |
+```yaml
+role: master
+roles: [master]
+agentKey: "<32-char shared key>"
+instances:
+  - id: host-a
+    name: Display name
+    dshUrl: http://192.0.2.10:3080
+    panelUrl: http://192.0.2.10:40005
+    ssh: user@192.0.2.10
+    tokenLogPath: ~/.dsh/dsh-web.log
+    dshPort: 37801
+    panelPort: 37802
+    agentUrl: http://192.0.2.10:3080/fleet-agent
+    budgetDailyUsd: 0
+pollMs: 5000
+portBase: 37800
+budgetDailyUsd: 0
+budgetWarnPct: 80
+```
+
+## Compatibility
+
+| Item | Requirement |
 |---|---|
-| `roles` | `[master]`, `[agent]`, or `[master, agent]` (needed when the master itself is also managed) |
-| `role` | Legacy field; `agent` alone means an agent-only slave |
-| `agentKey` | Shared secret between master and agents (use a random 32-char string, identical on both sides) |
-| `instances[]` | `id`, `name`, `dshUrl`, `panelUrl`, `ssh`, `tokenLogPath`, `dshPort`, `panelPort`, `agentUrl`, `enabled` |
-| `portBase` | Start of the proxy port range (default 37801; each instance takes two: DSH and dashboard) |
-| `pollMs` | Health poll interval (default 5000; automatically silenced while the panel is closed) |
-| `panelLocalUrl` | Agent-side local address of `:40005` (used by the agent to read the dashboard) |
+| DSH | tested on **0.2.2-rc.1**; bundle mechanism implies 0.2.x |
+| Node | ≥ 22 |
+| Browser | Chrome / Edge for iframe process isolation; Safari / Firefox should use *Open dashboard* |
+| Upstream | http only |
+| Optional plugin | `dsh-context` for usage / context / budget data |
 
-Instance fields:
+## Security model
 
-- `dshUrl`: remote DSH web address (e.g. `http://192.0.2.10:3080`)
-- `panelUrl`: remote `:40005` dashboard (empty = host has no dashboard)
-- `ssh`: `user@host`; enabling it lets the master pull the token from the slave log and renew the cookie automatically (optional — you can also paste a token via **Reauthorize**)
-- `tokenLogPath`: slave DSH startup log (the last `?token=` is extracted; default `~/.dsh/dsh-web.log`)
-- `dshPort` / `panelPort`: loopback ports on the master; left empty they are allocated from `portBase`
-- `enabled`: temporarily disable an instance
-
-## Usage
-
-1. **Open the panel**: sidebar → **Fleet**.
-2. **Instance rail**: the pseudo-instance **All sessions** on top, then one row per host (online state, session count, running count, latency, dashboard state; `no dashboard` means `panelUrl` is not set).
-3. **Three views on the right**:
-   - **Overview**: CPU / memory / load / disks / GPU cards per host (from `:40005`); “Open DSH” opens that host's real UI in a new tab.
-   - **Dashboard**: the current host's `:40005` page embedded (fullscreen available); “Open dashboard” opens it in a new tab.
-   - **All sessions** (in the rail below): every session on every host, **running first**, with a device tag per row. Search, **Running only**, and **With subagents** (child sessions are hidden by default; when shown they carry a `sub` badge and their task label). **Click any row** to open that session inside the panel (switching sessions reuses the booted remote app, no reload).
-4. **Usage**: top tab **Usage** → today / 7 days / 30 days, with total tokens, cost, cache hit and sessions; below are per-device cards (14-day trend), **context pressure** (running-session window occupancy + one-click new session), a model breakdown and the top-50 session table (click a row to open it). Hosts without `dsh-context` are marked *tokens only*.
-   - **Budget**: Settings → Fleet accepts a global daily budget (USD) and warning threshold, plus optional per-instance budgets. The Usage view shows a budget pill and over/warn banners.
-5. **Launch a session**: rail bottom → **New session** → pick **device / folder** (empty = default, suggestions from history) **/ model** → the panel switches to that device and opens the new session.
-6. **Add an instance**: rail bottom → **Add** → fill name, DSH URL, dashboard URL, SSH, ports; the proxy is created and authorization attempted on save.
-7. **Authorization failures**: when an instance shows “not authorized”, click **Reauthorize** and paste that host's DSH launch token (the `http://host:3080/?token=...` line in its `~/.dsh/dsh-web.log`).
-8. **Performance behaviour**: polling pauses while the page is hidden; data is prewarmed in the background before the panel opens; hidden dashboard / viewer iframes are destroyed after 60 seconds.
-
-## Security
-
-- Remote cookies are stored only in the master's `~/.dsh/.credentials.yaml` (`dsh-fleet/<id>`) — not in the browser, not in logs.
-- Each proxy requires a one-time key (`?k=` → HttpOnly cookie); requests without it get 401, and proxies listen on `127.0.0.1` only.
-- All agent endpoints except `ping` require `X-Fleet-Key`; they are read-only.
-- SSH is used only to `grep` the token out of the slave log and renew cookies; no business data is transferred.
+- Remote DSH cookies live only in the master's `~/.dsh/.credentials.yaml` (`dsh-fleet/<id>`).
+- Proxies bind `127.0.0.1` and require a one-time key (`?k=` → HttpOnly cookie), otherwise 401.
+- Agent endpoints except `ping` require `X-Fleet-Key`; all are read-only.
+- SSH is used only to grep the launch token out of the slave log.
+- Usage data is aggregates only (tokens / cost / models), never conversation content.
 
 ## FAQ
 
-| Symptom | Fix |
-|---|---|
-| Blank dashboard / endless spinner | Usually third-party cookies are fully blocked; use **Open dashboard** in a new tab, or allow cookies for `localhost` |
-| Clicking the dashboard freezes the page | Only Chrome/Edge have cross-site process isolation; on Safari/Firefox use **Open dashboard** in a new tab |
-| Instance shows “not authorized” | The token rotates on slave restart: configure `ssh` for automatic renewal, or paste the new token via **Reauthorize** |
-| Agent endpoints return 401 | `agentKey` differs between master and slave, or the slave has not been restarted with the agent role |
-| Slave fails with `@deepseek-ai/schemastery` not found | Follow step 2 of the agent install (symlink) |
-| Cannot reach the slave on 3080 | That DSH web is not running or listens elsewhere; `dsh web` does not bind `0.0.0.0` by default — pass `--host 0.0.0.0` |
-| List is slow with very large session counts | Server keeps a 30 s full-list cache plus a 10 s query cache and the client prewarms; increase `pollMs` if needed |
+**Blank dashboard / spinner?** Third-party cookies are blocked; use *Open dashboard* in a new tab or allow `localhost` cookies.
 
-## Changelog
+**Instance shows "not authorized"?** Tokens rotate on restart. Configure SSH for automatic renewal, or paste the new token via *Reauthorize*.
 
-See [CHANGELOG.md](CHANGELOG.md).
+**Usage shows "tokens only"?** That host lacks `dsh-context` or has an old version. Install 0.85+ and `POST /api/dsh-context/backfill`.
+
+## Roadmap
+
+- [x] P1 usage overview (tokens / cost / models / session ranking)
+- [x] P2 context pressure + budgets
+- [ ] P3 30-day history persistence, cross-host comparison, CSV export, webhook alerts
 
 ## License
 
-MIT
+MIT © czhmisaka
