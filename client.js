@@ -36,6 +36,7 @@ window.__ModuleLoader__.load({
         floor3dHint: '拖拽旋转、滚轮缩放；每个工位是一个实例，工作中的 Agent 正在敲键盘，点击工位可选中实例。',
         floor3dAuto: '自动环绕',
         floor3dRunning: '工作中',
+        floor3dRest: '休息中',
         floor3dOnline: '在线',
         floor3dOffline: '离线',
         floor3dEmpty: '暂无实例，先在左侧添加一台。',
@@ -185,6 +186,7 @@ window.__ModuleLoader__.load({
         floor3dHint: 'Drag to rotate, scroll to zoom. Each desk is an instance; agents marked Working are typing. Click a desk to select it.',
         floor3dAuto: 'Auto orbit',
         floor3dRunning: 'Working',
+        floor3dRest: 'Resting',
         floor3dOnline: 'Online',
         floor3dOffline: 'Offline',
         floor3dEmpty: 'No instances yet — add one from the left rail.',
@@ -1183,6 +1185,44 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           return { group, armL, armR, body, head }
         }
 
+        const loungeSpots = [
+          new THREE.Vector3(5.1, 0, 3.3),
+          new THREE.Vector3(6.0, 0, 4.5),
+          new THREE.Vector3(7.1, 0, 3.8),
+          new THREE.Vector3(6.3, 0, 3.0),
+          new THREE.Vector3(4.4, 0, 4.4),
+          new THREE.Vector3(7.8, 0, 4.6),
+        ]
+        // rest area: sofa + coffee table + floor lamp
+        const loungeRug = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 3.4), new THREE.MeshStandardMaterial({ color: 0x3a2b22, roughness: 0.95 }))
+        loungeRug.rotation.x = -Math.PI / 2
+        loungeRug.position.set(6.2, 0.018, 3.8)
+        loungeRug.receiveShadow = true
+        scene.add(loungeRug)
+        const sofaMat = mat(0x6b4a3a, { roughness: 0.9 })
+        const sofaSeat = box(2.0, 0.4, 0.85, sofaMat, -6.8, 0.4, 3.7)
+        scene.add(sofaSeat)
+        scene.add(box(2.0, 0.75, 0.2, sofaMat, -6.8, 0.78, 3.32))
+        scene.add(box(0.2, 0.55, 0.85, sofaMat, -7.75, 0.62, 3.7))
+        scene.add(box(0.2, 0.55, 0.85, sofaMat, -5.85, 0.62, 3.7))
+        const tableTop = box(1.3, 0.08, 0.7, mat(0x6e4b32), -6.2, 0.45, 4.6)
+        scene.add(tableTop)
+        for (const [lx, lz] of [[-0.55, -0.25], [0.55, -0.25], [-0.55, 0.25], [0.55, 0.25]]) {
+          scene.add(box(0.06, 0.42, 0.06, mat(0x2e343a), -6.2 + lx, 0.22, 4.6 + lz))
+        }
+        const floorLamp = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.8, 8), mat(0x2a2f35))
+        floorLamp.position.set(4.3, 0.9, 4.8)
+        scene.add(floorLamp)
+        const floorShade = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.28, 14, 1, true), new THREE.MeshStandardMaterial({ color: 0xf4ce86, emissive: 0xffb85c, emissiveIntensity: 1.6, side: THREE.DoubleSide }))
+        floorShade.position.set(4.3, 1.86, 4.8)
+        scene.add(floorShade)
+        const loungeLight = new THREE.PointLight(0xffb45e, 1.2, 8)
+        loungeLight.position.set(5.0, 2.0, 4.4)
+        scene.add(loungeLight)
+        const restLabel = makeLabel('休息区')
+        restLabel.position.set(6.2, 2.2, 5.2)
+        scene.add(restLabel)
+
         for (let index = 0; index < deskCount; index += 1) {
           const instance = instances[index]
           const col = index % cols
@@ -1256,18 +1296,12 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 
           const state = instance.online === false ? 'off' : instance.authed === false ? 'warn' : (instance.sessions?.running ?? 0) > 0 ? 'busy' : 'idle'
           const agentColor = state === 'busy' ? 0x34d399 : state === 'idle' ? 0x22d3ee : state === 'warn' ? 0xfbbf24 : 0x4b5563
-          const agent = makeAgent(agentColor, state === 'busy')
-          agent.group.position.set(0, 0, 0.02)
-          if (state === 'busy') {
-            agent.group.position.z = 0.58
-            agent.group.rotation.y = Math.PI
-          } else if (state === 'idle') {
-            agent.group.position.set(0.95, 0, 0.15)
-            agent.group.rotation.y = -0.6
-          } else {
-            agent.group.visible = false
-          }
-          desk.add(agent.group)
+          const agent = makeAgent(agentColor, false)
+          const lounge = loungeSpots[index % loungeSpots.length].clone()
+          agent.group.position.set(x, 0, z + 0.58)
+          agent.group.rotation.y = Math.PI
+          agent.group.visible = state !== 'off'
+          scene.add(agent.group)
           pickables.push(agent.group)
 
           const label = makeLabel(instance.name || instance.id)
@@ -1275,7 +1309,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           desk.add(label)
 
           scene.add(desk)
-          agents.push({ instance, desk, agent, screenMat, state, selectedRing, label, baseZ: z, phase: index * 1.37 })
+          agents.push({ instance, desk, agent, screenMat, state, selectedRing, label, lounge, phase: index * 1.37 })
         }
 
         // ambient floor deco: side plants
@@ -1374,7 +1408,15 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
             entry.selectedRing.material.opacity = selected ? 0.85 : 0
             entry.selectedRing.rotation.z += dt * 0.8
             entry.selectedRing.visible = selected
-            if (!entry.agent.group.visible) continue
+            entry.agent.group.visible = state !== 'off'
+            if (state === 'off') continue
+            const deskPos = entry.desk.position
+            const isBusy = state === 'busy'
+            const target = isBusy
+              ? new THREE.Vector3(deskPos.x, 0, deskPos.z + 0.58)
+              : entry.lounge
+            entry.agent.group.position.lerp(target, Math.min(1, dt * 2.2))
+            entry.agent.group.rotation.y = isBusy ? Math.PI : -Math.PI * 0.35
             if (state === 'busy') {
               const swing = Math.sin(time * 6 + entry.phase) * 0.35
               entry.agent.armL.rotation.x = -0.75 + swing
@@ -1386,6 +1428,9 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
               entry.agent.armR.rotation.x = -Math.sin(time * 0.8 + entry.phase) * 0.06
               entry.agent.group.position.y = Math.sin(time * 1.2 + entry.phase) * 0.01
               entry.screenMat.emissiveIntensity = 0.35
+            } else {
+              entry.agent.armL.rotation.x = 0
+              entry.agent.armR.rotation.x = 0
             }
           }
           renderer.render(scene, camera)
@@ -1430,10 +1475,11 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 
       const online = instances.filter((item) => item.online !== false).length
       const running = instances.reduce((sum, item) => sum + (item.sessions?.running ?? 0), 0)
+      const resting = instances.filter((item) => item.online !== false && (item.sessions?.running ?? 0) === 0).length
       return h('div', { className: 'dsf-office3d' },
         h('div', { className: 'dsf-office3d-hud' },
           h('span', { className: 'dsf-office3d-title' }, 'DSH 办公室'),
-          h('span', { className: 'dsf-office3d-clock' }, `${tr('floor3dOnline')} ${online}/${instances.length}  ·  ${tr('floor3dRunning')} ${running}`),
+          h('span', { className: 'dsf-office3d-clock' }, `${tr('floor3dOnline')} ${online}/${instances.length}  ·  ${tr('floor3dRunning')} ${running}  ·  ${tr('floor3dRest')} ${resting}`),
           h('button', { className: 'dsf-office3d-chip', onClick: () => setOrbit((value) => { live.current.auto = !value; return !value }) }, orbit ? '⏸ 暂停' : '▶ 环绕')),
         h('div', { className: 'dsf-office3d-feed' },
           instances.map((item) => h('button', {
@@ -1443,7 +1489,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           },
           h('i', { className: item.online === false ? 'off' : (item.sessions?.running ?? 0) > 0 ? 'busy' : 'idle' }),
           h('span', { className: 'name' }, item.name || item.id),
-          h('span', { className: 'meta' }, (item.sessions?.running ?? 0) > 0 ? `${item.sessions.running} 运行` : '待机')))),
+          h('span', { className: 'meta' }, item.online === false ? tr('floor3dOffline') : (item.sessions?.running ?? 0) > 0 ? `${item.sessions.running} ${tr('floor3dRunning')}` : tr('floor3dRest'))))),
         h('div', { ref: mountRef, className: 'dsf-office3d-mount' }),
         h('div', { className: 'dsf-floor3d-tip' }, tr('floor3dHint')))
     }
