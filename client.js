@@ -478,13 +478,23 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-assistant{width:300px}}
 
-.dsf-office3d{position:absolute;inset:0;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#0d1a22 0%,#080d13 55%,#06080c 100%)}
-.dsf-office3d-mount{position:absolute;inset:0}
-.dsf-office3d canvas{display:block;width:100%;height:100%}
-.dsf-floor3d-hud{position:absolute;left:14px;top:12px;z-index:3;display:flex;align-items:center;gap:10px;font-size:11px;color:#c9d7e2;background:rgba(10,16,22,.72);border:1px solid #26313d;border-radius:10px;padding:7px 10px;backdrop-filter:blur(6px)}
-.dsf-floor3d-hud .ok{color:#34d399}
-.dsf-floor3d-tip{position:absolute;left:14px;bottom:12px;z-index:3;max-width:min(520px,70%);font-size:11px;line-height:1.6;color:#7d8794;background:rgba(10,16,22,.72);border:1px solid #26313d;border-radius:10px;padding:7px 10px}
-.dsf-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7d8794;font-size:12px}
+.dsf-office3d{position:absolute;inset:0;overflow:hidden;background:#070d16}
+.dsf-office3d::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at 50% 45%,transparent 52%,rgba(4,8,14,.55) 100%);mix-blend-mode:multiply}
+.dsf-office3d-mount{position:absolute;inset:0;z-index:1}
+.dsf-office3d canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
+.dsf-office3d-hud{position:absolute;left:14px;top:12px;z-index:4;display:flex;align-items:center;gap:12px;padding:7px 10px;border-radius:10px;background:rgba(246,238,220,.94);color:#3a2f25;box-shadow:0 6px 18px rgba(0,0,0,.28);border:1px solid rgba(90,70,50,.25)}
+.dsf-office3d-title{font-size:12px;font-weight:700;letter-spacing:.08em}
+.dsf-office3d-clock{font-size:10.5px;color:#6b5946}
+.dsf-office3d-chip{border:1px solid rgba(90,70,50,.3);background:#fffaf0;color:#4a3a2a;border-radius:7px;padding:3px 7px;font:inherit;font-size:10px;cursor:pointer}
+.dsf-office3d-feed{position:absolute;left:14px;bottom:56px;z-index:4;display:flex;flex-direction:column;gap:4px;width:172px}
+.dsf-office3d-row{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(12,19,27,.78);color:#dce8f2;font:inherit;font-size:10.5px;text-align:left;cursor:pointer;backdrop-filter:blur(4px)}
+.dsf-office3d-row.on{border-color:rgba(244,206,134,.7);background:rgba(55,44,30,.85)}
+.dsf-office3d-row i{width:6px;height:6px;border-radius:50%;background:#68737f;flex:none}
+.dsf-office3d-row i.busy{background:#f4ce86;box-shadow:0 0 7px rgba(244,206,134,.8)}
+.dsf-office3d-row i.idle{background:#7fb7a2}
+.dsf-office3d-row .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dsf-office3d-row .meta{color:#9fb0bd;font-size:9.5px}
+.dsf-floor3d-tip{position:absolute;right:14px;bottom:12px;z-index:4;max-width:min(360px,55%);font-size:10.5px;line-height:1.6;color:#e8dcc7;background:rgba(246,238,220,.92);border-radius:9px;padding:6px 9px;border:1px solid rgba(90,70,50,.25);color:#4a3a2a}
 .dsf-cards{position:absolute;inset:0;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;align-content:start}
 .dsf-card{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1);padding:12px 14px;min-width:0}
 .dsf-card-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -972,18 +982,19 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         const mount = mountRef.current
         const THREE = window.THREE
         if (mount === null || THREE === undefined) return undefined
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
-        renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1))
+        const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false })
+        renderer.setPixelRatio(1)
+        renderer.domElement.style.imageRendering = 'pixelated'
         renderer.shadowMap.enabled = true
         renderer.shadowMap.type = THREE.PCFSoftShadowMap
         mount.appendChild(renderer.domElement)
         const scene = new THREE.Scene()
         scene.background = new THREE.Color(0x080d13)
         scene.fog = new THREE.Fog(0x080d13, 24, 42)
-        const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 120)
+        const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 140)
         let theta = 0.78
-        let phi = 0.92
-        let radius = 29
+        let phi = 0.82
+        let radius = 33
         const target = new THREE.Vector3(0, 1.0, 0)
         let auto = true
         let dragging = false
@@ -992,9 +1003,9 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         let lastY = 0
         live.current.auto = true
 
-        const hemi = new THREE.HemisphereLight(0x9fd8e6, 0x1a120c, 1.05)
+        const hemi = new THREE.HemisphereLight(0xffe2bd, 0x241a13, 1.0)
         scene.add(hemi)
-        const keyLight = new THREE.DirectionalLight(0xfff2d8, 2.0)
+        const keyLight = new THREE.DirectionalLight(0xffd9a0, 2.3)
         keyLight.position.set(7, 14, 9)
         keyLight.castShadow = true
         keyLight.shadow.mapSize.set(1024, 1024)
@@ -1018,11 +1029,49 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         }
 
         // floor + rugs + walls
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 15), mat(0x241b16, { roughness: 0.9 }))
+
+        const makePatternTexture = (w, h, painter, repeatX = 1, repeatY = 1) => {
+          const canvas = document.createElement('canvas')
+          canvas.width = w
+          canvas.height = h
+          const ctx = canvas.getContext('2d')
+          painter(ctx, w, h)
+          const texture = new THREE.CanvasTexture(canvas)
+          texture.magFilter = THREE.NearestFilter
+          texture.minFilter = THREE.NearestFilter
+          texture.wrapS = THREE.RepeatWrapping
+          texture.wrapT = THREE.RepeatWrapping
+          texture.repeat.set(repeatX, repeatY)
+          return texture
+        }
+        const woodTexture = makePatternTexture(64, 64, (ctx, w, h) => {
+          ctx.fillStyle = '#4b3528'
+          ctx.fillRect(0, 0, w, h)
+          for (let y = 0; y < h; y += 8) {
+            ctx.fillStyle = y % 16 === 0 ? '#543c2d' : '#493327'
+            ctx.fillRect(0, y, w, 7)
+            ctx.fillStyle = 'rgba(30,18,12,0.35)'
+            ctx.fillRect(0, y + 7, w, 1)
+            for (let x = (y % 16); x < w; x += 22) ctx.fillRect(x, y + 3, 8, 1)
+          }
+        }, 10, 7)
+        const rugTexture = makePatternTexture(48, 48, (ctx, w, h) => {
+          ctx.fillStyle = '#152b26'
+          ctx.fillRect(0, 0, w, h)
+          ctx.strokeStyle = '#23453b'
+          ctx.lineWidth = 2
+          for (let i = -h; i < w + h; i += 12) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + h, h); ctx.stroke()
+          }
+          ctx.fillStyle = 'rgba(236,214,166,0.07)'
+          for (let y = 4; y < h; y += 12) for (let x = 4; x < w; x += 12) ctx.fillRect(x, y, 2, 2)
+        }, 5, 4)
+
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 15), new THREE.MeshStandardMaterial({ map: woodTexture, roughness: 0.82 }))
         floor.rotation.x = -Math.PI / 2
         floor.receiveShadow = true
         scene.add(floor)
-        const rug = new THREE.Mesh(new THREE.PlaneGeometry(13.5, 9), mat(0x12312b, { roughness: 0.95 }))
+        const rug = new THREE.Mesh(new THREE.PlaneGeometry(13.5, 9), new THREE.MeshStandardMaterial({ map: rugTexture, roughness: 0.95 }))
         rug.rotation.x = -Math.PI / 2
         rug.position.y = 0.012
         rug.receiveShadow = true
@@ -1033,17 +1082,39 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         const sideWall = box(0.25, 7.2, 15, wallMat, -8.8, 3.6, 0)
         scene.add(sideWall)
         // window strips
-        const windowMat = new THREE.MeshStandardMaterial({ color: 0x0d1b26, emissive: 0x1f6f78, emissiveIntensity: 0.55, roughness: 0.35 })
+        const windowMat = new THREE.MeshStandardMaterial({ color: 0x0d1b26, emissive: 0xffb066, emissiveIntensity: 0.75, roughness: 0.35 })
         for (let i = 0; i < 3; i += 1) {
           scene.add(box(3.2, 2.5, 0.08, windowMat, -4.2 + i * 4.2, 4.1, -6.66))
         }
         // warm ceiling fill lights (no visible fixture: room is open-top)
         for (let i = 0; i < 3; i += 1) {
-          const p = new THREE.PointLight(0xffd27a, 0.5, 12)
+          const p = new THREE.PointLight(0xffc978, 1.3, 13)
           p.position.set(-3.5 + i * 3.5, 5.4, -1.2)
           scene.add(p)
         }
 
+        // whiteboard + notes on the back wall
+        const board = box(3.4, 1.9, 0.08, mat(0xe9e2d2), 2.2, 3.4, -6.64)
+        scene.add(board)
+        const noteColors = [0xf4ce86, 0xd98b6a, 0x8fbfa8, 0x9db8d9]
+        for (let i = 0; i < 7; i += 1) {
+          const note = box(0.24, 0.24, 0.02, mat(noteColors[i % noteColors.length]), 1.2 + (i % 4) * 0.55, 3.75 - Math.floor(i / 4) * 0.55, -6.56)
+          scene.add(note)
+        }
+        // low bookshelf along the left wall
+        const shelf = box(3.2, 1.8, 0.45, mat(0x4b3528), -7.1, 0.9, -2.2)
+        scene.add(shelf)
+        for (let i = 0; i < 14; i += 1) {
+          scene.add(box(0.16, 0.42, 0.3, mat([0xd98b6a, 0x8fbfa8, 0xf4ce86, 0x6d8db0][i % 4]), -8.4 + (i % 7) * 0.42, 0.55 + Math.floor(i / 7) * 0.55, -2.2))
+        }
+        // coffee counter
+        const counter = box(2.8, 1.0, 0.7, mat(0x5b4030), 6.9, 0.5, 1.6)
+        scene.add(counter)
+        const coffee = box(0.7, 0.55, 0.45, mat(0x2a2f35), 7.4, 1.35, 1.6)
+        scene.add(coffee)
+        const mug2 = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.16, 12), mat(0xf0e3ca))
+        mug2.position.set(6.3, 1.08, 1.6)
+        scene.add(mug2)
         const pickables = []
         const agents = []
         const deskCount = instances.length
@@ -1058,14 +1129,14 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           canvas.height = 128
           const ctx = canvas.getContext('2d')
           ctx.clearRect(0, 0, 512, 128)
-          ctx.fillStyle = 'rgba(8,14,20,0.82)'
+          ctx.fillStyle = 'rgba(246,238,220,0.95)'
           ctx.beginPath()
           ctx.roundRect(8, 26, 496, 72, 18)
           ctx.fill()
-          ctx.strokeStyle = 'rgba(52,211,153,0.35)'
+          ctx.strokeStyle = 'rgba(90,70,50,0.45)'
           ctx.lineWidth = 3
           ctx.stroke()
-          ctx.fillStyle = '#e9f3fc'
+          ctx.fillStyle = '#3a2f25'
           ctx.font = '600 38px system-ui, -apple-system, "PingFang SC", sans-serif'
           ctx.textAlign = 'center'
           ctx.textBaseline = 'middle'
@@ -1147,6 +1218,14 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           mug.position.set(0.7, 0.9, -0.1)
           mug.castShadow = true
           desk.add(mug)
+
+          const lampShade = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.16, 12, 1, true), new THREE.MeshStandardMaterial({ color: 0xf4ce86, emissive: 0xffb85c, emissiveIntensity: 1.4, side: THREE.DoubleSide }))
+          lampShade.position.set(0.82, 1.26, -0.32)
+          lampShade.rotation.x = 0.5
+          desk.add(lampShade)
+          const lampPole = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.5, 8), mat(0x2a2a2a))
+          lampPole.position.set(0.82, 1.0, -0.32)
+          desk.add(lampPole)
           // chair
           const chairMat = mat(0x222b33, { roughness: 0.8 })
           desk.add(box(0.62, 0.08, 0.58, chairMat, 0, 0.5, 0.92))
@@ -1229,7 +1308,10 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           const rect = mount.getBoundingClientRect()
           const w = Math.max(1, rect.width)
           const h = Math.max(1, rect.height)
-          renderer.setSize(w, h, false)
+          const scale = 1.55
+          renderer.setSize(Math.max(1, Math.floor(w / scale)), Math.max(1, Math.floor(h / scale)), false)
+          renderer.domElement.style.width = '100%'
+          renderer.domElement.style.height = '100%'
           camera.aspect = w / h
           camera.updateProjectionMatrix()
         }
@@ -1349,10 +1431,19 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
       const online = instances.filter((item) => item.online !== false).length
       const running = instances.reduce((sum, item) => sum + (item.sessions?.running ?? 0), 0)
       return h('div', { className: 'dsf-office3d' },
-        h('div', { className: 'dsf-floor3d-hud' },
-          h('span', null, `${tr('floor3dOnline')} ${online}/${instances.length}`),
-          h('span', { className: 'ok' }, `${tr('floor3dRunning')} ${running}`),
-          h('button', { className: 'dsf-btn', onClick: () => setOrbit((value) => { live.current.auto = !value; return !value }) }, orbit ? `⏸ ${tr('floor3dAuto')}` : `▶ ${tr('floor3dAuto')}`)),
+        h('div', { className: 'dsf-office3d-hud' },
+          h('span', { className: 'dsf-office3d-title' }, 'DSH 办公室'),
+          h('span', { className: 'dsf-office3d-clock' }, `${tr('floor3dOnline')} ${online}/${instances.length}  ·  ${tr('floor3dRunning')} ${running}`),
+          h('button', { className: 'dsf-office3d-chip', onClick: () => setOrbit((value) => { live.current.auto = !value; return !value }) }, orbit ? '⏸ 暂停' : '▶ 环绕')),
+        h('div', { className: 'dsf-office3d-feed' },
+          instances.map((item) => h('button', {
+            key: item.id,
+            className: `dsf-office3d-row${selectedId === item.id ? ' on' : ''}`,
+            onClick: () => onPick(item.id),
+          },
+          h('i', { className: item.online === false ? 'off' : (item.sessions?.running ?? 0) > 0 ? 'busy' : 'idle' }),
+          h('span', { className: 'name' }, item.name || item.id),
+          h('span', { className: 'meta' }, (item.sessions?.running ?? 0) > 0 ? `${item.sessions.running} 运行` : '待机')))),
         h('div', { ref: mountRef, className: 'dsf-office3d-mount' }),
         h('div', { className: 'dsf-floor3d-tip' }, tr('floor3dHint')))
     }
