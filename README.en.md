@@ -30,7 +30,7 @@ Three design rules: **don't touch the slaves** (a read-only agent is enough), **
 
 ## Features
 
-| | Feature | Details |
+| Module | Feature | Details |
 |---|---|---|
 | 🖥️ | **Instance rail** | online / auth / latency / dashboard state and running count, collapsible |
 | 📋 | **All sessions** | cross-host list, running first, device tags, search + running filter, subagent support |
@@ -175,6 +175,31 @@ budgetWarnPct: 80
 - [x] P1 usage overview (tokens / cost / models / session ranking)
 - [x] P2 context pressure + budgets
 - [ ] P3 30-day history persistence, cross-host comparison, CSV export, webhook alerts
+
+## Standard test environment
+
+For a repeatable master + agent + CubeSandbox fleet, use `test-env/`:
+
+```bash
+node test-env/up.mjs     # create CubeSandbox DSH instances and register them
+node test-env/smoke.mjs  # status / sessions / usage / assistant checks
+node test-env/down.mjs   # unregister and destroy
+```
+
+Topology and the acceptance checklist live in [test-env/README.md](test-env/README.md); the delivery record is in [test-env/RECORD.md](test-env/RECORD.md).
+
+## Changelog
+
+The full history lives in **[CHANGELOG.md](CHANGELOG.md)** (changes, fixes and upgrade notes per release). Recent releases:
+
+| Version | Date | Theme |
+|---|---|---|
+| [v0.5.2](CHANGELOG.md#v0-5-2) | 2026-11-19 | Standard CubeSandbox test environment + baked template |
+| [v0.5.1](CHANGELOG.md#v0-5-1) | 2026-11-18 | Draggable sidebars |
+| [v0.5.0](CHANGELOG.md#v0-5-0) | 2026-11-18 | Assistant embeds a native master DSH session |
+| [v0.4.0](CHANGELOG.md#v0-4-0) | 2026-11-18 | Assistant runs a real DSH session (fleetctl dispatch) |
+| [v0.3.0](CHANGELOG.md#v0-3-0) | 2026-11-18 | Right-side DSH assistant (rule-based) |
+| [v0.1.11 and earlier](CHANGELOG.md#v0-1-11) | 2026-11-18 | First public release and early iterations |
 
 ## License
 
