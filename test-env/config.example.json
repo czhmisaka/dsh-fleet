@@ -1,0 +1,14 @@
+{
+  "sandboxHost": "user@192.0.2.10",
+  "cubeBundleDir": "/home/user/cubesandbox",
+  "e2bPython": "/home/user/cubesandbox/.venv-e2b/bin/python",
+  "templateId": "tpl-xxxxxxxxxxxxxxxxxxxxxxxx",
+  "sandboxCount": 2,
+  "sandboxTtlSeconds": 7200,
+  "instancePrefix": "cube-",
+  "proxyBasePort": 13181,
+  "publicHost": "192.0.2.10",
+  "masterUrl": "http://127.0.0.1:3080",
+  "masterTokenLog": "~/.dsh/dsh-web.log",
+  "cubeApi": "http://127.0.0.1:3000"
+}

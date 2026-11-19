@@ -205,6 +205,18 @@ budgetWarnPct: 80        # 告警阈值
 | [v0.2.0](CHANGELOG.md#v0-2-0) | 2026-11-18 | 多机用量视图 |
 | [v0.1.11 及更早](CHANGELOG.md#v0-1-11) | 2026-11-18 | 首个公开版本与早期迭代 |
 
+## 标准测试环境
+
+需要一套可重复的 master + agent + CubeSandbox 多机环境时，用仓库里的 `test-env/`：
+
+```bash
+node test-env/up.mjs     # 建 CubeSandbox 实例 + 注册进 fleet
+node test-env/smoke.mjs  # 状态/会话/用量/助手接口验收
+node test-env/down.mjs   # 注销 + 销毁
+```
+
+拓扑与验收清单见 [test-env/README.md](test-env/README.md)。
+
 ## 贡献
 
 欢迎 Issue / PR。改 client 后请用真实 Chrome 验证（Playwright `channel: 'chrome'`），纯 Chromium 没有跨站进程隔离，测不出内嵌页真实性能。
