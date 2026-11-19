@@ -215,7 +215,7 @@ node test-env/smoke.mjs  # 状态/会话/用量/助手接口验收
 node test-env/down.mjs   # 注销 + 销毁
 ```
 
-拓扑与验收清单见 [test-env/README.md](test-env/README.md)。
+拓扑与验收清单见 [test-env/README.md](test-env/README.md)，落地记录见 [test-env/RECORD.md](test-env/RECORD.md)。
 
 ## 贡献
 
