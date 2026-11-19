@@ -488,6 +488,11 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-office3d-title{font-size:12px;font-weight:700;letter-spacing:.08em}
 .dsf-office3d-clock{font-size:10.5px;color:#6b5946}
 .dsf-office3d-chip{border:1px solid rgba(90,70,50,.3);background:#fffaf0;color:#4a3a2a;border-radius:7px;padding:3px 7px;font:inherit;font-size:10px;cursor:pointer}
+.dsf-office3d-bubbles{position:absolute;inset:0;z-index:3;pointer-events:none}
+.dsf-office3d-bubble{position:absolute;transform:translate(-50%,-100%);max-width:172px;padding:5px 8px;border-radius:8px;background:rgba(250,244,229,.97);border:2px solid #5a4a38;color:#3a2f25;font-size:10px;line-height:1.35;box-shadow:3px 3px 0 rgba(20,15,10,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .2s}
+.dsf-office3d-bubble.busy{border-color:#7a5a2e;background:rgba(255,246,220,.98)}
+.dsf-office3d-bubble.on{border-color:#2f8f5b;box-shadow:3px 3px 0 rgba(20,60,40,.45)}
+.dsf-office3d-bubble .tail{position:absolute;left:50%;bottom:-9px;margin-left:-5px;width:10px;height:10px;background:inherit;border-right:2px solid #5a4a38;border-bottom:2px solid #5a4a38;transform:rotate(45deg)}
 .dsf-office3d-feed{position:absolute;left:14px;bottom:56px;z-index:4;display:flex;flex-direction:column;gap:4px;width:172px}
 .dsf-office3d-row{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:rgba(12,19,27,.78);color:#dce8f2;font:inherit;font-size:10.5px;text-align:left;cursor:pointer;backdrop-filter:blur(4px)}
 .dsf-office3d-row.on{border-color:rgba(244,206,134,.7);background:rgba(55,44,30,.85)}
@@ -971,10 +976,20 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 
 
     /** Three.js isometric office: one desk + agent per instance. */
-    function AgentOffice3D({ tr, instances, selectedId, onPick }) {
+    function AgentOffice3D({ tr, instances, sessions = [], selectedId, onPick }) {
       const mountRef = useRef(null)
       const [orbit, setOrbit] = useState(true)
       const live = useRef({ instances, selectedId, onPick, auto: true })
+      const bubbleRefs = useRef({})
+      const latestSession = useMemo(() => {
+        const map = new Map()
+        for (const entry of sessions) {
+          const previous = map.get(entry.instanceId)
+          const better = previous === undefined || (entry.running && !previous.running) || (Boolean(entry.running) === Boolean(previous.running) && (entry.updatedAt ?? 0) > (previous.updatedAt ?? 0))
+          if (better) map.set(entry.instanceId, entry)
+        }
+        return map
+      }, [sessions])
       live.current.instances = instances
       live.current.selectedId = selectedId
       live.current.onPick = onPick
@@ -1433,6 +1448,20 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
               entry.agent.armR.rotation.x = 0
             }
           }
+          const rect = mount.getBoundingClientRect()
+          for (const entry of agents) {
+            const element = bubbleRefs.current[entry.instance.id]
+            if (!element) continue
+            const pos = entry.agent.group.position.clone()
+            pos.y += 2.55
+            pos.project(camera)
+            const x = (pos.x * 0.5 + 0.5) * rect.width
+            const y = (-pos.y * 0.5 + 0.5) * rect.height
+            const visible = entry.agent.group.visible && pos.z < 1 && x > -80 && x < rect.width + 80 && y > 0 && y < rect.height + 40
+            element.style.left = `${x}px`
+            element.style.top = `${y}px`
+            element.style.opacity = visible ? '1' : '0'
+          }
           renderer.render(scene, camera)
           frames += 1
           if (frames % 30 === 0) {
@@ -1473,6 +1502,19 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         }
       }, [key])
 
+      const bubbleFor = (item) => {
+        if (item.online === false) return null
+        if (item.authed === false) return tr('needAuth')
+        const running = item.sessions?.running ?? 0
+        const latest = latestSession.get(item.id)
+        if (running > 0) {
+          const title = (latest?.title || latest?.label || '').trim()
+          return title ? `汇报：${title.length > 18 ? `${title.slice(0, 18)}…` : title}` : '汇报：正在执行任务…'
+        }
+        const recent = latest && Date.now() - (latest.updatedAt ?? 0) < 60 * 60 * 1000
+        return recent ? `刚汇报：${latest.title || '完成一项任务'}` : `休息中 ☕`
+      }
+
       const online = instances.filter((item) => item.online !== false).length
       const running = instances.reduce((sum, item) => sum + (item.sessions?.running ?? 0), 0)
       const resting = instances.filter((item) => item.online !== false && (item.sessions?.running ?? 0) === 0).length
@@ -1490,6 +1532,18 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           h('i', { className: item.online === false ? 'off' : (item.sessions?.running ?? 0) > 0 ? 'busy' : 'idle' }),
           h('span', { className: 'name' }, item.name || item.id),
           h('span', { className: 'meta' }, item.online === false ? tr('floor3dOffline') : (item.sessions?.running ?? 0) > 0 ? `${item.sessions.running} ${tr('floor3dRunning')}` : tr('floor3dRest'))))),
+        h('div', { className: 'dsf-office3d-bubbles' },
+          instances.map((item) => {
+            const text = bubbleFor(item)
+            if (text === null) return null
+            return h('div', {
+              key: item.id,
+              ref: (element) => { bubbleRefs.current[item.id] = element },
+              className: `dsf-office3d-bubble${(item.sessions?.running ?? 0) > 0 ? ' busy' : ''}${selectedId === item.id ? ' on' : ''}`,
+            },
+            h('span', { className: 'txt' }, text),
+            h('i', { className: 'tail' }))
+          })),
         h('div', { ref: mountRef, className: 'dsf-office3d-mount' }),
         h('div', { className: 'dsf-floor3d-tip' }, tr('floor3dHint')))
     }
@@ -2108,7 +2162,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
                 },
               })
               : view === 'floor3d'
-              ? h(AgentOffice3D, { tr, instances, selectedId: selected?.id ?? null, onPick: (id) => setSelectedId(id) })
+              ? h(AgentOffice3D, { tr, instances, sessions: aggSessions, selectedId: selected?.id ?? null, onPick: (id) => setSelectedId(id) })
               : view === 'overview'
               ? h('div', { className: 'dsf-cards' },
                 (overview.data?.machines ?? []).map((machine) => h(OverviewCard, {
