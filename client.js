@@ -22,6 +22,13 @@ window.__ModuleLoader__.load({
         overview: '总览',
         dshView: 'DSH 界面',
         panelView: '看板',
+        floor3dView: '3D 办公区',
+        floor3dHint: '每个工位是一个实例；工作中徽标的 Agent 正在敲键盘，点击工位可选中实例。',
+        floor3dAuto: '自动环绕',
+        floor3dRunning: '工作中',
+        floor3dOnline: '在线',
+        floor3dOffline: '离线',
+        floor3dEmpty: '暂无实例，先在左侧添加一台。',
         refresh: '刷新',
         openTab: '在新标签打开',
         openDsh: '打开 DSH',
@@ -164,6 +171,13 @@ window.__ModuleLoader__.load({
         overview: 'Overview',
         dshView: 'DSH UI',
         panelView: 'Dashboard',
+        floor3dView: '3D Office',
+        floor3dHint: 'Each desk is an instance; agents marked Working are typing. Click a desk to select it.',
+        floor3dAuto: 'Auto orbit',
+        floor3dRunning: 'Working',
+        floor3dOnline: 'Online',
+        floor3dOffline: 'Offline',
+        floor3dEmpty: 'No instances yet — add one from the left rail.',
         refresh: 'Refresh',
         openTab: 'Open in tab',
         openDsh: 'Open DSH',
@@ -453,6 +467,34 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-resizer:hover,.dsf-resizer:active{background:rgba(52,211,153,.28)}
 body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-assistant{width:300px}}
+
+.dsf-floor3d{position:absolute;inset:0;overflow:hidden;background:radial-gradient(ellipse at 50% 42%,#12222a 0%,#0a1117 45%,#070a10 100%);perspective:1400px}
+.dsf-floor3d-hud{position:absolute;left:14px;top:12px;display:flex;align-items:center;gap:10px;z-index:3;font-size:11px;color:#c9d7e2;background:rgba(10,16,22,.72);border:1px solid #26313d;border-radius:10px;padding:7px 10px;backdrop-filter:blur(6px)}
+.dsf-floor3d-hud .ok{color:#34d399}
+.dsf-floor3d-floor{position:absolute;left:50%;top:58%;width:min(760px,92%);aspect-ratio:1.9;transform:translate(-50%,-50%) rotateX(62deg);border-radius:50%;background:radial-gradient(ellipse,rgba(52,211,153,.22),rgba(34,211,238,.08) 42%,transparent 70%);box-shadow:0 0 90px rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.18)}
+.dsf-floor3d-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform-style:preserve-3d}
+.dsf-floor3d-ring{position:relative;width:220px;height:300px;transform-style:preserve-3d;will-change:transform}
+.dsf-agent-card{position:absolute;left:50%;top:50%;width:184px;height:236px;margin:-118px 0 0 -92px;display:flex;flex-direction:column;align-items:center;gap:7px;padding:18px 14px;border-radius:18px;border:1px solid #26313d;background:linear-gradient(180deg,rgba(26,36,46,.96),rgba(13,19,26,.96));color:#c9d7e2;font:inherit;cursor:pointer;backface-visibility:hidden;transition:border-color .2s,box-shadow .2s,background .2s;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.dsf-agent-card:hover{border-color:#3f5567}
+.dsf-agent-card.selected{border-color:#34d399;box-shadow:0 0 0 1px rgba(52,211,153,.45),0 18px 50px rgba(0,0,0,.45)}
+.dsf-agent-card.busy{background:linear-gradient(180deg,rgba(20,48,42,.97),rgba(11,23,22,.97));border-color:rgba(52,211,153,.5)}
+.dsf-agent-card.warn{border-color:rgba(251,191,36,.5)}
+.dsf-agent-card.off{opacity:.58;filter:saturate(.4)}
+.dsf-agent-avatar{display:flex;align-items:center;justify-content:center;width:58px;height:58px;border-radius:50%;font-size:30px;background:radial-gradient(circle at 35% 30%,#28404d,#111a22);border:1px solid #2d3f4d}
+.dsf-agent-card.busy .dsf-agent-avatar{box-shadow:0 0 0 4px rgba(52,211,153,.12),0 0 26px rgba(52,211,153,.3);animation:dsf-breathe 2.4s ease-in-out infinite}
+.dsf-agent-name{font-size:13px;font-weight:600;color:#e6eef6;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dsf-agent-state{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:#7d8794}
+.dsf-agent-state.busy{color:#34d399}
+.dsf-agent-state.warn{color:#fbbf24}
+.dsf-agent-state.off{color:#68737f}
+.dsf-agent-metrics{display:flex;flex-direction:column;gap:3px;width:100%;margin-top:4px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);font-size:10px;color:#7d8794}
+.dsf-agent-typing{display:flex;gap:3px;height:8px;align-items:flex-end;margin-top:auto}
+.dsf-agent-typing i{display:block;width:4px;height:4px;border-radius:2px;background:rgba(52,211,153,.35);animation:dsf-typing 1s ease-in-out infinite}
+.dsf-agent-typing i:nth-child(2){animation-delay:.15s}.dsf-agent-typing i:nth-child(3){animation-delay:.3s}
+.dsf-agent-card.off .dsf-agent-typing i{animation:none;background:rgba(120,130,145,.25)}
+@keyframes dsf-typing{0%,100%{height:4px;opacity:.35}50%{height:9px;opacity:1}}
+@keyframes dsf-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.dsf-floor3d-tip{position:absolute;left:14px;bottom:12px;z-index:3;max-width:min(560px,70%);font-size:11px;line-height:1.6;color:#7d8794;background:rgba(10,16,22,.72);border:1px solid #26313d;border-radius:10px;padding:7px 10px}
 .dsf-cards{position:absolute;inset:0;overflow:auto;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;align-content:start}
 .dsf-card{border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1);padding:12px 14px;min-width:0}
 .dsf-card-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
@@ -923,6 +965,71 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         flushList(`list-end-${blockIndex}`)
       })
       return out
+    }
+
+
+    /** 3D carousel of agent "employees": one card per instance. */
+    function AgentFloor3D({ tr, instances, selectedId, onPick }) {
+      const [orbit, setOrbit] = useState(true)
+      const ringRef = useRef(null)
+      const yawRef = useRef(0)
+      const count = instances.length
+      const radius = Math.max(180, Math.min(240, 110 + count * 18))
+      const step = count > 0 ? 360 / count : 360
+
+      useEffect(() => {
+        let raf = 0
+        let last = performance.now()
+        const tick = (now) => {
+          const dt = Math.min(0.05, (now - last) / 1000)
+          last = now
+          if (orbit) yawRef.current += dt * 10
+          if (ringRef.current !== null) {
+            ringRef.current.style.transform = `translateZ(-${radius}px) rotateY(${yawRef.current}deg)`
+          }
+          raf = requestAnimationFrame(tick)
+        }
+        raf = requestAnimationFrame(tick)
+        return () => cancelAnimationFrame(raf)
+      }, [orbit, radius])
+
+      const online = instances.filter((item) => item.online !== false).length
+      const running = instances.reduce((sum, item) => sum + (item.sessions?.running ?? 0), 0)
+
+      return h('div', { className: 'dsf-floor3d' },
+        h('div', { className: 'dsf-floor3d-hud' },
+          h('span', null, `${tr('floor3dOnline')} ${online}/${count}`),
+          h('span', { className: 'ok' }, `${tr('floor3dRunning')} ${running}`),
+          h('button', { className: 'dsf-btn', onClick: () => setOrbit((value) => !value) }, orbit ? `⏸ ${tr('floor3dAuto')}` : `▶ ${tr('floor3dAuto')}`)),
+        h('div', { className: 'dsf-floor3d-floor' }),
+        h('div', { className: 'dsf-floor3d-stage' },
+          h('div', { className: 'dsf-floor3d-ring', ref: ringRef },
+            instances.map((instance, index) => {
+              const runningCount = instance.sessions?.running ?? 0
+              const onlineState = instance.online !== false
+              const authed = instance.authed !== false
+              const state = !onlineState ? 'off' : !authed ? 'warn' : runningCount > 0 ? 'busy' : 'idle'
+              const selected = selectedId === instance.id
+              return h('button', {
+                key: instance.id,
+                type: 'button',
+                className: `dsf-agent-card ${state}${selected ? ' selected' : ''}`,
+                style: { transform: `rotateY(${index * step}deg) translateZ(${radius}px)` },
+                title: instance.name || instance.id,
+                onClick: () => onPick(instance.id),
+              },
+              h('span', { className: 'dsf-agent-avatar' }, state === 'busy' ? '🤖' : state === 'idle' ? '🧑‍💻' : state === 'warn' ? '🔑' : '💤'),
+              h('span', { className: 'dsf-agent-name' }, instance.name || instance.id),
+              h('span', { className: `dsf-agent-state ${state}` },
+                h('i', { className: 'dsf-pulse' }),
+                state === 'busy' ? tr('floor3dRunning') : state === 'off' ? tr('floor3dOffline') : state === 'warn' ? tr('needAuth') : tr('online')),
+              h('span', { className: 'dsf-agent-metrics' },
+                h('span', null, `${tr('sessionsTitle')} ${instance.sessions?.count ?? '—'}`),
+                h('span', null, `${tr('running')} ${runningCount}`)),
+              h('span', { className: 'dsf-agent-typing' }, h('i'), h('i'), h('i')))
+            })),
+          instances.length === 0 ? h('div', { className: 'dsf-empty' }, tr('floor3dEmpty')) : null),
+        h('div', { className: 'dsf-floor3d-tip' }, tr('floor3dHint')))
     }
 
     function Panel() {
@@ -1473,6 +1580,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
             h(React.Fragment, null,
                 h('button', { className: `dsf-tab${view === 'overview' ? ' on' : ''}`, onClick: () => setView('overview') }, tr('overview')),
             h('button', { className: `dsf-tab${view === 'usage' ? ' on' : ''}`, onClick: () => setView('usage') }, tr('usageView')),
+            h('button', { className: `dsf-tab${view === 'floor3d' ? ' on' : ''}`, onClick: () => setView('floor3d') }, tr('floor3dView')),
             h('button', {
               className: `dsf-tab${view === 'panel' ? ' on' : ''}`,
               onClick: () => {
@@ -1537,6 +1645,8 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
                   } catch { /* surfaced by the viewer/usage refresh */ }
                 },
               })
+              : view === 'floor3d'
+              ? h(AgentFloor3D, { tr, instances, selectedId: selected?.id ?? null, onPick: (id) => setSelectedId(id) })
               : view === 'overview'
               ? h('div', { className: 'dsf-cards' },
                 (overview.data?.machines ?? []).map((machine) => h(OverviewCard, {
