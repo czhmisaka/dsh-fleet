@@ -1380,6 +1380,40 @@ switch (command) {
       if (cached === undefined) await this.refreshUsage('today')
       json(res, { ok: true, usage: this.usageCache.get('today')?.value ?? null })
     })
+    register({
+      kind: 'exact',
+      path: '/fleet/session-tail',
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        if (req.method !== 'GET') { json(res, { ok: false, error: 'method not allowed' }, 405); return }
+        try {
+          const url = new URL(req.url, 'http://127.0.0.1')
+          const instanceId = url.searchParams.get('instanceId') ?? ''
+          const sessionId = url.searchParams.get('sessionId') ?? ''
+          const count = Math.max(4, Math.min(40, Number(url.searchParams.get('count') ?? 24) || 24))
+          const runtime = this.runtimes.get(instanceId)
+          if (runtime === undefined) { json(res, { ok: false, error: 'unknown instance' }, 404); return }
+          const page = await callRemote(runtime.state.instance.dshUrl, runtime.state.cookie, 'session/page', {
+            request: { address: { kind: 'session', sessionId }, maxMessages: count },
+          })
+          const messages = (page?.records ?? []).map((record) => {
+            const event = record?.event ?? record
+            const message = event?.data?.message
+            const parts = Array.isArray(message?.content) ? message.content : []
+            return {
+              role: event?.type === 'assistant/message' ? 'assistant' : event?.type === 'user/message' ? 'user' : 'other',
+              text: parts.filter((part) => part?.type === 'text' && typeof part.text === 'string').map((part) => part.text).join(''),
+            }
+          }).filter((message) => message.text.trim() !== '')
+          const assistant = messages.filter((message) => message.role === 'assistant')
+          const last = assistant.length > 0 ? assistant[assistant.length - 1] : null
+          json(res, { ok: true, sessionId, text: last?.text ?? '', updatedAt: Date.now() })
+        } catch (error) {
+          json(res, { ok: false, error: macMessage(error) }, 502)
+        }
+      },
+    })
+
     ctlRoute('/fleet/ctl/tail', async (req, res) => {
       const url = new URL(req.url, 'http://127.0.0.1')
       const instanceId = url.searchParams.get('instanceId') ?? ''

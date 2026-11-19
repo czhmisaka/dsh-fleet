@@ -489,8 +489,15 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-office3d-clock{font-size:10.5px;color:#6b5946}
 .dsf-office3d-chip{border:1px solid rgba(90,70,50,.3);background:#fffaf0;color:#4a3a2a;border-radius:7px;padding:3px 7px;font:inherit;font-size:10px;cursor:pointer}
 .dsf-office3d-bubbles{position:absolute;inset:0;z-index:3;pointer-events:none}
-.dsf-office3d-bubble{position:absolute;transform:translate(-50%,-100%);max-width:172px;padding:5px 8px;border-radius:8px;background:rgba(250,244,229,.97);border:2px solid #5a4a38;color:#3a2f25;font-size:10px;line-height:1.35;box-shadow:3px 3px 0 rgba(20,15,10,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .2s}
+.dsf-office3d-bubble{pointer-events:auto;cursor:pointer;font:inherit;text-align:left;position:absolute;transform:translate(-50%,-100%);max-width:172px;padding:5px 8px;border-radius:8px;background:rgba(250,244,229,.97);border:2px solid #5a4a38;color:#3a2f25;font-size:10px;line-height:1.35;box-shadow:3px 3px 0 rgba(20,15,10,.35);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:opacity .2s}
 .dsf-office3d-bubble.busy{border-color:#7a5a2e;background:rgba(255,246,220,.98)}
+.dsf-office3d-bubble.done{border-color:#2f8f5b;background:rgba(226,246,232,.98)}
+.dsf-office3d-bubble.report{border-color:#b98a4a}
+.dsf-office3d-bubble .dots{display:inline-flex;gap:2px;margin-left:4px;vertical-align:middle}
+.dsf-office3d-bubble .dots i{width:3px;height:3px;border-radius:50%;background:#7a5a2e;animation:dsf-bubble-dot 1s infinite}
+.dsf-office3d-bubble .dots i:nth-child(2){animation-delay:.15s}
+.dsf-office3d-bubble .dots i:nth-child(3){animation-delay:.3s}
+@keyframes dsf-bubble-dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
 .dsf-office3d-bubble.on{border-color:#2f8f5b;box-shadow:3px 3px 0 rgba(20,60,40,.45)}
 .dsf-office3d-bubble .tail{position:absolute;left:50%;bottom:-9px;margin-left:-5px;width:10px;height:10px;background:inherit;border-right:2px solid #5a4a38;border-bottom:2px solid #5a4a38;transform:rotate(45deg)}
 .dsf-office3d-feed{position:absolute;left:14px;bottom:56px;z-index:4;display:flex;flex-direction:column;gap:4px;width:172px}
@@ -976,7 +983,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 
 
     /** Three.js isometric office: one desk + agent per instance. */
-    function AgentOffice3D({ tr, instances, sessions = [], selectedId, onPick }) {
+    function AgentOffice3D({ tr, instances, sessions = [], selectedId, onPick, onOpenSession }) {
       const mountRef = useRef(null)
       const [orbit, setOrbit] = useState(true)
       const live = useRef({ instances, selectedId, onPick, auto: true })
@@ -990,6 +997,70 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         }
         return map
       }, [sessions])
+
+      const byInstance = useMemo(() => {
+        const map = new Map()
+        for (const entry of sessions) {
+          if (!map.has(entry.instanceId)) map.set(entry.instanceId, [])
+          map.get(entry.instanceId).push(entry)
+        }
+        for (const list of map.values()) {
+          list.sort((a, b) => Number(Boolean(b.running)) - Number(Boolean(a.running)) || (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+        }
+        return map
+      }, [sessions])
+      const [tails, setTails] = useState({})
+      const [done, setDone] = useState({})
+      const [tick, setTick] = useState(0)
+      const prevRunning = useRef({})
+
+      useEffect(() => {
+        const timer = setInterval(() => setTick((value) => value + 1), 7000)
+        return () => clearInterval(timer)
+      }, [])
+
+      useEffect(() => {
+        let cancelled = false
+        const load = async () => {
+          const targets = []
+          for (const item of instances) {
+            if (item.online === false) continue
+            const list = byInstance.get(item.id) ?? []
+            const picked = list.filter((entry) => entry.running).slice(0, 2)
+            const fallback = list.slice(0, 1)
+            for (const entry of (picked.length > 0 ? picked : fallback)) {
+              if (entry?.sessionId) targets.push({ instanceId: item.id, sessionId: entry.sessionId })
+            }
+          }
+          const results = await Promise.all(targets.slice(0, 16).map(async (target) => {
+            try {
+              const value = await apiGet(`fleet/session-tail?instanceId=${encodeURIComponent(target.instanceId)}&sessionId=${encodeURIComponent(target.sessionId)}`)
+              return { key: `${target.instanceId}|${target.sessionId}`, text: value?.ok ? String(value.text ?? '') : '' }
+            } catch { return { key: `${target.instanceId}|${target.sessionId}`, text: '' } }
+          }))
+          if (cancelled) return
+          setTails((previous) => {
+            const next = { ...previous }
+            for (const result of results) if (result.text) next[result.key] = result.text
+            return next
+          })
+        }
+        void load()
+        const timer = setInterval(load, 12000)
+        return () => { cancelled = true; clearInterval(timer) }
+      }, [instances, byInstance])
+
+      useEffect(() => {
+        const nowDone = {}
+        for (const item of instances) {
+          const running = item.sessions?.running ?? 0
+          const previous = prevRunning.current[item.id] ?? running
+          if (previous > 0 && running === 0) nowDone[item.id] = Date.now() + 8000
+          prevRunning.current[item.id] = running
+        }
+        if (Object.keys(nowDone).length > 0) setDone((previous) => ({ ...previous, ...nowDone }))
+      }, [instances])
+
       live.current.instances = instances
       live.current.selectedId = selectedId
       live.current.onPick = onPick
@@ -1504,15 +1575,21 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 
       const bubbleFor = (item) => {
         if (item.online === false) return null
-        if (item.authed === false) return tr('needAuth')
+        if (item.authed === false) return { text: tr('needAuth'), kind: 'warn', session: null }
+        const list = byInstance.get(item.id) ?? []
+        const runningList = list.filter((entry) => entry.running)
+        const candidates = runningList.length > 0 ? runningList : list
+        const session = candidates.length > 0 ? candidates[tick % candidates.length] : null
+        const tail = session ? tails[`${item.id}|${session.sessionId}`] : ''
+        const fallback = (session?.title || session?.label || '').trim()
+        const report = (tail || fallback || '完成一项任务').replace(/\s+/g, ' ').trim()
+        const clipped = report.length > 26 ? `${report.slice(0, 26)}…` : report
         const running = item.sessions?.running ?? 0
-        const latest = latestSession.get(item.id)
-        if (running > 0) {
-          const title = (latest?.title || latest?.label || '').trim()
-          return title ? `汇报：${title.length > 18 ? `${title.slice(0, 18)}…` : title}` : '汇报：正在执行任务…'
-        }
-        const recent = latest && Date.now() - (latest.updatedAt ?? 0) < 60 * 60 * 1000
-        return recent ? `刚汇报：${latest.title || '完成一项任务'}` : `休息中 ☕`
+        if (running > 0) return { text: `汇报：${clipped}`, kind: 'busy', session }
+        if (done[item.id] !== undefined && done[item.id] > Date.now()) return { text: `✔ 刚汇报：${clipped}`, kind: 'done', session }
+        const recent = session && Date.now() - (session.updatedAt ?? 0) < 45 * 60 * 1000
+        if (recent) return { text: `刚汇报：${clipped}`, kind: 'report', session }
+        return { text: '休息中 ☕', kind: 'rest', session: null }
       }
 
       const online = instances.filter((item) => item.online !== false).length
@@ -1534,14 +1611,22 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           h('span', { className: 'meta' }, item.online === false ? tr('floor3dOffline') : (item.sessions?.running ?? 0) > 0 ? `${item.sessions.running} ${tr('floor3dRunning')}` : tr('floor3dRest'))))),
         h('div', { className: 'dsf-office3d-bubbles' },
           instances.map((item) => {
-            const text = bubbleFor(item)
-            if (text === null) return null
-            return h('div', {
+            const bubble = bubbleFor(item)
+            if (bubble === null) return null
+            return h('button', {
               key: item.id,
+              type: 'button',
               ref: (element) => { bubbleRefs.current[item.id] = element },
-              className: `dsf-office3d-bubble${(item.sessions?.running ?? 0) > 0 ? ' busy' : ''}${selectedId === item.id ? ' on' : ''}`,
+              className: `dsf-office3d-bubble ${bubble.kind}${selectedId === item.id ? ' on' : ''}`,
+              title: bubble.session ? tr('openSessionHint') : undefined,
+              onClick: (event) => {
+                event.stopPropagation()
+                if (bubble.session !== null && onOpenSession) onOpenSession(item, bubble.session)
+                else onPick(item.id)
+              },
             },
-            h('span', { className: 'txt' }, text),
+            h('span', { className: 'txt' }, bubble.text),
+            bubble.kind === 'busy' ? h('span', { className: 'dots' }, h('i'), h('i'), h('i')) : null,
             h('i', { className: 'tail' }))
           })),
         h('div', { ref: mountRef, className: 'dsf-office3d-mount' }),
@@ -2162,7 +2247,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
                 },
               })
               : view === 'floor3d'
-              ? h(AgentOffice3D, { tr, instances, sessions: aggSessions, selectedId: selected?.id ?? null, onPick: (id) => setSelectedId(id) })
+              ? h(AgentOffice3D, { tr, instances, sessions: aggSessions, selectedId: selected?.id ?? null, onPick: (id) => setSelectedId(id), onOpenSession: (instance, session) => openSessionFor(instance, session) })
               : view === 'overview'
               ? h('div', { className: 'dsf-cards' },
                 (overview.data?.machines ?? []).map((machine) => h(OverviewCard, {
