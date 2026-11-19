@@ -145,7 +145,7 @@ window.__ModuleLoader__.load({
         assistantClose: '收起助手',
         assistantTitle: 'DSH 助手',
         assistantHint: '分配 · 下发 · 管理',
-        assistantWelcome: '你好，我是 DSH 调度助手。我背后是一个真实的 DSH 会话，拥有完整的 DSH 能力（读写文件、跑命令、查会话、联网等），并且会优先把任务派发给被管理的实例去执行。可以直接说需求，比如：看一下漫剧任务进度、把回归测试派到 X99、总结今天所有实例在做什么。',
+        assistantWelcome: '你好，我是 DSH 调度助手。我背后是一个真实的 DSH 会话，拥有完整的 DSH 能力（读写文件、跑命令、查会话、联网等），并且会优先把任务派发给被管理的实例去执行。可以直接说需求，比如：看一下漫剧任务进度、把回归测试派到某台从机、总结今天所有实例在做什么。',
         assistantPlaceholder: '例如：派发任务 到 /data/proj：跑一次回归测试',
         assistantSend: '发送',
         assistantQuickStatus: '状态汇总',

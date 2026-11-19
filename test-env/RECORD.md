@@ -39,6 +39,22 @@
 4. **CubeEgress 截断**：Node tar.gz（57MB）会被 32MB 级截断，导致 tar 报 `Unexpected EOF`；改用 `.tar.xz`（31.4MB）并本地解压。
 5. **TTL**：sandbox 是租约制，到期 DSH 随之消失；用 `node test-env/renew.mjs` 续租，或重建。
 
+
+## 调试记录与产物（2026-11-19）
+
+本轮调试的关键现场（均已脱敏，真实地址/令牌不进入仓库）：
+
+1. 在宿主机下载 Node `.tar.xz` 后，用 E2B `files.write(..., gzip=True)` 送进 sandbox，避免 CubeEgress 的慢速与截断。
+2. `npm i -g --registry https://registry.npmmirror.com @deepseek-ai/dsh@0.2.2-rc.1`，装完 `/opt/node-v24.16.0-linux-x64/bin/dsh` 可用。
+3. `cubemastercli template commit --sandbox-id <id> --json` 后，新模板 READY；克隆实例里 DSH 进程被快照带出，需要按新 `sandbox-id` 重启并重取 token。
+4. 宿主反代最初用手工 `node` 进程，端口被旧进程占用导致 `EADDRINUSE`；最终收敛为 systemd user unit `cube-http-proxy.service`。
+5. 实例通过 `PUT /fleet/config` + `POST /fleet/authorize` 注册，`/fleet/sessions` 与 `/fleet/launch` 均成功返回。
+
+长期产物：
+
+- 公开：本文件 + `test-env/README.md` + `test-env/*.mjs`/`*.py` + CHANGELOG v0.5.2。
+- 环境相关：`test-env/config.json`、`test-env/.manifest.json` 为本地文件，已 gitignore，不进入仓库。
+
 ## 相关文件
 
 - `test-env/up.mjs` — 创建 + 注册 + 授权

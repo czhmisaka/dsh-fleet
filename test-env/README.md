@@ -4,9 +4,9 @@
 
 ```
 Mac（master DSH :36900）
-  ├── 4090 宿主机（agent DSH :3080）        ← 已有的真实从机
+  ├── agent 宿主机（DSH :3080）             ← 已有的真实从机
   └── CubeSandbox × N（MicroVM 内 DSH）      ← 本目录负责创建/销毁
-        └── 3080-<sandbox-id>.cube.app  → 4090 上的 HTTP 反代 → fleet 实例
+        └── 3080-<sandbox-id>.cube.app  → 宿主机上的 HTTP 反代 → fleet 实例
 ```
 
 ## 前置条件
@@ -14,8 +14,8 @@ Mac（master DSH :36900）
 | 项 | 要求 |
 |---|---|
 | master | 本机 DSH Web 可访问，`~/.dsh/dsh-web.log` 能读到最新 `?token=` |
-| agent | 一台已接入 fleet 的真实 DSH（如 4090），用来覆盖「真实主机」路径 |
-| CubeSandbox | 4090 上已装 CubeSandbox（`cubemastercli` / `:3000`），有一个 ≥20G 可写层的模板且暴露 3080 |
+| agent | 一台已接入 fleet 的真实 DSH（如一台 GPU 服务器），用来覆盖「真实主机」路径 |
+| CubeSandbox | 宿主机上已装 CubeSandbox（`cubemastercli` / `:3000`），有一个 ≥20G 可写层的模板且暴露 3080 |
 | 网络 | master 能 SSH 到 CubeSandbox 宿主机，并能访问其反代端口 |
 | 工具 | master 上 `node >= 22`、`ssh`、`scp`、`tar` |
 
@@ -71,7 +71,7 @@ node test-env/down.mjs        # 注销实例 + 销毁 sandbox + 停反代
 
 ## master 侧 fleet 条目
 
-`up.mjs` 只改 `instancePrefix`（默认 `cube-`）开头的条目，其余实例（mac/spark2/s169/x99…）
+`up.mjs` 只改 `instancePrefix`（默认 `cube-`）开头的条目，其余实例（已有 master/从机）
 **逐字段原样回写**，不会把 master 自己的 `ssh` / `agentUrl` / `tokenLogPath` / `dshPort` 改坏。
 
 cube 条目固定 11 个字段：
