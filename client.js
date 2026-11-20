@@ -1717,12 +1717,8 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 
       useEffect(() => {
         if (instances.length === 0) return
-        if (selectedId !== null && (selectedId === ALL_VIEW_ID || instances.some((item) => item.id === selectedId))) return
-        let remembered = null
-        try { remembered = localStorage.getItem('dsh-fleet.selectedId') } catch { remembered = null }
-        const rememberedInstance = instances.find((item) => item.id === remembered)
-        const withPanel = instances.find((item) => typeof item.panelUrl === 'string' && item.panelUrl !== '' && item.panelProxyUrl !== null)
-        setSelectedId((rememberedInstance ?? withPanel ?? instances[0]).id)
+        if (selectedId === null) { setSelectedId(ALL_VIEW_ID); return }
+        if (selectedId !== ALL_VIEW_ID && !instances.some((item) => item.id === selectedId)) setSelectedId(ALL_VIEW_ID)
       }, [instances, selectedId])
 
       useEffect(() => {
