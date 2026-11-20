@@ -555,7 +555,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-session-age{font-size:10px;color:var(--dsw-alias-label-secondary);flex:none}
 .dsf-session{background:none;border:none;font:inherit;color:inherit;text-align:left;width:100%;cursor:pointer}
 .dsf-viewer.hidden{display:none}
-.dsf-viewer{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--dsw-alias-bg-mask-1)}
+.dsf-viewer{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--dsw-alias-bg-base);box-shadow:0 0 0 1px var(--dsw-alias-border-l1)}
 .dsf-viewer-bar{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-layer-1)}
 .dsf-viewer-title{flex:1;min-width:0;font-size:12.5px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dsf-viewer-frame-wrap{flex:1;position:relative;min-height:0;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;overflow:hidden;background:var(--dsw-alias-bg-base)}
@@ -1272,12 +1272,12 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         }
 
         const loungeSpots = [
-          new THREE.Vector3(5.1, 0, 3.3),
-          new THREE.Vector3(6.0, 0, 4.5),
-          new THREE.Vector3(7.1, 0, 3.8),
-          new THREE.Vector3(6.3, 0, 3.0),
-          new THREE.Vector3(4.4, 0, 4.4),
-          new THREE.Vector3(7.8, 0, 4.6),
+          new THREE.Vector3(3.9, 0, 3.1),
+          new THREE.Vector3(5.2, 0, 5.2),
+          new THREE.Vector3(7.0, 0, 2.9),
+          new THREE.Vector3(8.0, 0, 4.4),
+          new THREE.Vector3(4.3, 0, 5.5),
+          new THREE.Vector3(6.3, 0, 5.6),
         ]
         // rest area: sofa + coffee table + floor lamp
         const loungeRug = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 3.4), new THREE.MeshStandardMaterial({ color: 0x3a2b22, roughness: 0.95 }))
@@ -1494,6 +1494,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
             entry.selectedRing.material.opacity = selected ? 0.85 : 0
             entry.selectedRing.rotation.z += dt * 0.8
             entry.selectedRing.visible = selected
+            entry.label.visible = selected
             entry.agent.group.visible = state !== 'off'
             if (state === 'off') continue
             const deskPos = entry.desk.position
@@ -1588,6 +1589,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         if (running > 0) return { text: `汇报：${clipped}`, kind: 'busy', session }
         if (done[item.id] !== undefined && done[item.id] > Date.now()) return { text: `✔ 刚汇报：${clipped}`, kind: 'done', session }
         const recent = session && Date.now() - (session.updatedAt ?? 0) < 45 * 60 * 1000
+        if (selectedId !== item.id) return null
         if (recent) return { text: `刚汇报：${clipped}`, kind: 'report', session }
         return { text: '休息中 ☕', kind: 'rest', session: null }
       }
@@ -2247,7 +2249,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
                 },
               })
               : view === 'floor3d'
-              ? h(AgentOffice3D, { tr, instances, sessions: aggSessions, selectedId: selected?.id ?? null, onPick: (id) => setSelectedId(id), onOpenSession: (instance, session) => openSessionFor(instance, session) })
+              ? (viewerOpen ? null : h(AgentOffice3D, { tr, instances, sessions: aggSessions, selectedId: selected?.id ?? null, onPick: (id) => setSelectedId(id), onOpenSession: (instance, session) => openSessionFor(instance, session) }))
               : view === 'overview'
               ? h('div', { className: 'dsf-cards' },
                 (overview.data?.machines ?? []).map((machine) => h(OverviewCard, {
