@@ -556,6 +556,29 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-spacer.tight{flex:0 0 6px}
 .dsf-launch-row{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;font-size:11px;color:var(--dsw-alias-label-secondary)}
 .dsf-launch-row select{width:100%;box-sizing:border-box;background:var(--dsw-alias-bg-layer-2);color:inherit;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;padding:7px 9px;font:inherit;font-size:12px}
+
+/* Launch dialog — forced dark glass, independent of the app theme. */
+.dsf-launch-modal{background:rgba(2,5,9,.78)!important;backdrop-filter:blur(10px)!important}
+.dsf-launch-dialog{width:min(92vw,430px)!important;max-width:430px!important;padding:0!important;background:linear-gradient(180deg,#1a2430 0%,#0f161e 100%)!important;border:1px solid #2f4050!important;border-radius:16px!important;box-shadow:0 28px 80px rgba(0,0,0,.68)!important;color:#e8f0f8!important;overflow:hidden!important}
+.dsf-launch-dialog .dsf-dialog-head{display:flex!important;align-items:flex-start!important;gap:12px!important;padding:18px 20px 14px!important;border-bottom:1px solid rgba(255,255,255,.08)!important;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent)!important}
+.dsf-launch-dialog .dsf-dialog-head h3{margin:0!important;font-size:16px!important;line-height:1.3!important;font-weight:650!important;color:#f4f8fc!important;letter-spacing:.01em!important}
+.dsf-launch-dialog .dsf-dialog-sub{margin:4px 0 0!important;font-size:11px!important;color:#93a5b6!important}
+.dsf-launch-dialog .dsf-dialog-x{width:28px!important;height:28px!important;margin-left:auto!important;border-radius:8px!important;border:1px solid #33475a!important;background:#0c141c!important;color:#9fb2c3!important;font-size:16px!important;cursor:pointer!important}
+.dsf-launch-dialog .dsf-dialog-x:hover{color:#fff!important;border-color:#4b677f!important;background:#14202b!important}
+.dsf-launch-dialog .dsf-launch-body{padding:18px 20px 4px!important;display:flex!important;flex-direction:column!important;gap:15px!important}
+.dsf-launch-dialog .dsf-launch-field{display:flex!important;flex-direction:column!important;gap:6px!important}
+.dsf-launch-dialog .dsf-launch-label{font-size:10px!important;font-weight:650!important;letter-spacing:.09em!important;text-transform:uppercase!important;color:#8ea3b5!important}
+.dsf-launch-dialog .dsf-select,.dsf-launch-dialog .dsf-input{width:100%!important;height:38px!important;box-sizing:border-box!important;background:#0a1118!important;border:1px solid #2c3e4e!important;border-radius:9px!important;padding:0 11px!important;color:#eef5fb!important;font:inherit!important;font-size:12.5px!important;outline:none!important;appearance:auto!important}
+.dsf-launch-dialog .dsf-select:focus,.dsf-launch-dialog .dsf-input:focus{border-color:#34d399!important;box-shadow:0 0 0 3px rgba(52,211,153,.14)!important}
+.dsf-launch-dialog .dsf-launch-hint{font-size:10.5px!important;color:#73879a!important}
+.dsf-launch-dialog .dsf-model-static{display:flex!important;align-items:center!important;height:38px!important;padding:0 11px!important;border:1px dashed #33475a!important;border-radius:9px!important;color:#93a5b6!important;font-size:12px!important;background:#0a1118!important}
+.dsf-launch-dialog .dsf-dialog-foot{display:flex!important;justify-content:flex-end!important;gap:8px!important;padding:14px 20px 18px!important;margin-top:6px!important;border-top:1px solid rgba(255,255,255,.07)!important}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn{height:34px!important;padding:0 16px!important;border-radius:9px!important;background:#111b24!important;border:1px solid #2f4050!important;color:#c7d6e3!important;font-weight:550!important}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary{background:linear-gradient(180deg,#3ee6a8,#2bc98c)!important;border-color:#2bc98c!important;color:#042016!important;font-weight:700!important;box-shadow:0 8px 20px rgba(52,211,153,.22)!important}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary:hover{filter:brightness(1.06)!important}
+.dsf-launch-dialog .dsf-err{background:rgba(248,113,113,.1)!important;border:1px solid rgba(248,113,113,.35)!important;border-radius:8px!important;padding:8px 10px!important;color:#fca5a5!important;font-size:11px!important}
+.dsf-launch-dialog option{background:#0a1118!important;color:#eef5fb!important}
+
 .dsf-sessions-head{display:flex;align-items:center;gap:6px;width:100%;background:none;border:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:11px;padding:0 8px 4px;cursor:pointer;text-align:left}
 .dsf-sessions-head:hover{color:var(--dsw-alias-label-primary)}
 .dsf-sessions-caret{margin-left:auto}
