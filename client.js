@@ -1660,6 +1660,32 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
       const [assistantOverride, setAssistantOverride] = useState(() => { try { return localStorage.getItem('dsh-fleet.assistantSession') } catch { return null } })
       const assistantFrameRef = useRef(null)
       const assistantFrameSession = assistantOverride ?? assistantSessionId
+      const [assistantNewBusy, setAssistantNewBusy] = useState(false)
+      const startNewAssistantSession = useCallback(async () => {
+        if (assistantNewBusy) return
+        const currentInstances = Array.isArray(status.data?.instances) ? status.data.instances : []
+        const master = currentInstances.find((item) => item.id === 'mac') ?? currentInstances.find((item) => item.role === 'master') ?? currentInstances[0]
+        if (master === undefined) { setAssistantSessionError('没有可用的 master 实例'); return }
+        setAssistantNewBusy(true)
+        try {
+          let cwd = ''
+          try {
+            const list = await apiGet(`fleet/sessions?instanceId=${encodeURIComponent(master.id)}`)
+            const items = Array.isArray(list?.sessions?.items) ? list.sessions.items : []
+            cwd = items.find((item) => item.sessionId === assistantFrameSession)?.cwd ?? items.find((item) => typeof item.cwd === 'string' && item.cwd.endsWith('/.dsh/fleet-assistant'))?.cwd ?? ''
+          } catch { /* fall through with empty cwd */ }
+          const result = await apiPost('fleet/launch', { instanceId: master.id, cwd, provider: '', model: '' })
+          if (!result.ok) throw new Error(result.error ?? 'new assistant session failed')
+          setAssistantOverride(result.sessionId)
+          try { localStorage.setItem('dsh-fleet.assistantSession', result.sessionId) } catch { /* private mode */ }
+          setAssistantSessionError(null)
+          setAssistantReload((value) => value + 1)
+        } catch (error) {
+          setAssistantSessionError(error instanceof Error ? error.message : String(error))
+        } finally {
+          setAssistantNewBusy(false)
+        }
+      }, [assistantNewBusy, assistantFrameSession, status.data, setAssistantOverride, setAssistantReload, setAssistantSessionError])
       const [asideWidth, setAsideWidth] = useState(() => {
         try { const value = Number(localStorage.getItem('dsh-fleet.asideWidth')); return Number.isFinite(value) && value >= 180 && value <= 460 ? value : 252 } catch { return 252 }
       })
@@ -1729,14 +1755,21 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           const frame = assistantFrameRef.current
           if (frame === null || event.source !== frame.contentWindow) return
           const data = event.data
+          if (data !== null && typeof data === 'object' && data.type === 'dshf:new-workspace-done') {
+            try { localStorage.removeItem('dsh-fleet.assistantSession') } catch { /* private mode */ }
+            return
+          }
+          if (data !== null && typeof data === 'object' && data.type === 'dshf:new-session-request') {
+            void startNewAssistantSession()
+            return
+          }
           if (data === null || typeof data !== 'object' || data.type !== 'dshf:new-session-ack') return
           if (typeof data.sessionId !== 'string' || data.sessionId === '') return
-          setAssistantOverride(data.sessionId)
           try { localStorage.setItem('dsh-fleet.assistantSession', data.sessionId) } catch { /* private mode */ }
         }
         window.addEventListener('message', onMessage)
         return () => window.removeEventListener('message', onMessage)
-      }, [])
+      }, [startNewAssistantSession])
 
       useEffect(() => {
         try { localStorage.setItem('dsh-fleet.assistantLog', JSON.stringify(assistantMessages.slice(-60))) } catch { /* private mode */ }
@@ -1974,7 +2007,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         }
         window.addEventListener('message', onMessage)
         return () => window.removeEventListener('message', onMessage)
-      }, [])
+      }, [startNewAssistantSession])
 
       const openSessionFor = (instance, session) => {
         const proxyUrl = instance?.dshProxyUrl
@@ -2075,11 +2108,8 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
             className: 'dsf-btn',
             title: 'new：清空当前助手会话，开新会话',
             disabled: assistantFrameSession === null,
-            onClick: () => {
-              const frame = assistantFrameRef.current
-              if (frame !== null) frame.contentWindow?.postMessage({ type: 'dshf:new-session' }, '*')
-            },
-          }, 'new'),
+            onClick: () => { try { localStorage.removeItem('dsh-fleet.assistantSession') } catch { /* private mode */ }; const frame = assistantFrameRef.current; if (frame !== null) frame.contentWindow?.postMessage({ type: 'dshf:new-workspace-session' }, '*') },
+          }, assistantNewBusy ? '…' : 'new'),
           h('button', {
             className: 'dsf-btn',
             disabled: assistantFrameSession === null,
@@ -2685,6 +2715,33 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         if (parentOrigin !== null && event.origin !== parentOrigin) return
         const data = event.data
         if (data === null || typeof data !== 'object') return
+        if (data.type === 'dshf:new-workspace-session') {
+          void (async () => {
+            try {
+              const workspace = ctx.get('uiWorkspace')
+              const workspaces = ctx.get('workspaces')
+              const sessions = ctx.get('sessions')
+              const current = window.__dshfSessionId
+              const snap = typeof workspaces?.list?.getSnapshot === 'function' ? workspaces.list.getSnapshot() : null
+              const sessionSnap = typeof sessions?.list?.getSnapshot === 'function' ? sessions.list.getSnapshot() : null
+              const cwd = current && sessionSnap?.byId?.[current]?.cwd ? sessionSnap.byId[current].cwd : undefined
+              let target = (snap?.items ?? []).find((item) => Array.isArray(item.sessionIds) && item.sessionIds.includes(current))
+                ?? (snap?.items ?? []).find((item) => typeof item.path === 'string' && cwd !== undefined && item.path === cwd)
+                ?? (snap?.items ?? []).find((item) => typeof item.path === 'string' && item.path.endsWith('/.dsh/fleet-assistant'))
+              if (target === undefined && cwd !== undefined && typeof workspaces?.create === 'function') {
+                target = await workspaces.create({ path: cwd })
+              }
+              if (workspace === undefined || target === undefined) throw new Error('workspace not found')
+              if (typeof workspace.openWorkspace === 'function') await workspace.openWorkspace(target.workspaceId)
+              else if (typeof workspace.startSession === 'function') workspace.startSession(target.workspaceId)
+              else throw new Error('workspace start unavailable')
+              post({ type: 'dshf:new-session-ack', sessionId: current ?? '' })
+            } catch (error) {
+              post({ type: 'dshf:new-session-error', message: error instanceof Error ? error.message : String(error) })
+            }
+          })()
+          return
+        }
         if (data.type === 'dshf:new-session') {
           void (async () => {
             fromParentNewSession()
@@ -2717,7 +2774,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         event.preventDefault()
         event.stopPropagation()
         editable.innerText = ''
-        void fromParentNewSession()
+        post({ type: 'dshf:new-workspace-session' })
       }
       document.addEventListener('keydown', onKey, true)
       window.__dshFleetBridge = 'v1'
@@ -2920,6 +2977,11 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
                 return
               }
               try {
+                const sessions = ctx.get('sessions')
+                if (sessions !== undefined && typeof sessions.list?.getSnapshot === 'function' && tries < 12) {
+                  const snapshot = sessions.list.getSnapshot()
+                  if (snapshot?.byId?.[target] === undefined) { tries += 1; setTimeout(tryOpen, 500); return }
+                }
                 workspace.openSession(target)
                 const url = new URL(location.href)
                 url.searchParams.delete('dshfSession')
