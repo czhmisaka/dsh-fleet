@@ -2040,7 +2040,8 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         viewerReady.current = false
         setViewerReadyState(false)
         viewerPending.current = session.sessionId
-        setViewerSrc(isolatedOrigin(`${proxyUrl}&dshfSession=${encodeURIComponent(session.sessionId)}&dshfCollapse=1`))
+        const cwdParam = typeof session.cwd === 'string' && session.cwd !== '' ? `&dshfCwd=${encodeURIComponent(session.cwd)}` : ''
+        setViewerSrc(isolatedOrigin(`${proxyUrl}&dshfSession=${encodeURIComponent(session.sessionId)}&dshfCollapse=1${cwdParam}`))
         setViewerReload((value) => value + 1)
         setViewer({ instanceId: instance.id, proxyUrl, sessionId: session.sessionId, title })
         setViewerOpen(true)
@@ -2414,11 +2415,11 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
               instances,
               defaultInstanceId: selected?.id ?? instances[0]?.id,
               onClose: () => setLaunchOpen(false),
-              onLaunched: async (instanceId, sessionId) => {
+              onLaunched: async (instanceId, sessionId, cwd) => {
                 setLaunchOpen(false)
                 setSelectedId(instanceId)
                 const instance = instances.find((item) => item.id === instanceId)
-                if (instance !== undefined) openSessionFor(instance, { sessionId, title: '' })
+                if (instance !== undefined) openSessionFor(instance, { sessionId, title: '', cwd })
                 await status.reload()
                 setAggRefresh((value) => value + 1)
               },
@@ -2433,6 +2434,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
       const initialId = candidates.some((instance) => instance.id === defaultInstanceId) ? defaultInstanceId : (candidates[0]?.id ?? '')
       const [instanceId, setInstanceId] = useState(initialId)
       const [folder, setFolder] = useState('')
+      const [folderTouched, setFolderTouched] = useState(false)
       const [folders, setFolders] = useState([])
       const [catalog, setCatalog] = useState(null)
       const [choice, setChoice] = useState('')
@@ -2450,6 +2452,13 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           try {
             const value = await apiGet(`fleet/folders?instanceId=${encodeURIComponent(instanceId)}`)
             if (!cancelled && value.ok) setFolders(value.folders ?? [])
+            const recent = await apiGet(`fleet/sessions?instanceId=${encodeURIComponent(instanceId)}&titled=1`)
+            if (!cancelled && recent.ok) {
+              const items = Array.isArray(recent.sessions?.items) ? recent.sessions.items : []
+              const cwd = items.find((item) => typeof item.cwd === 'string' && item.cwd !== '')?.cwd
+              if (!folderTouched && typeof cwd === 'string') setFolder(cwd)
+              if (typeof cwd === 'string' && !folders.includes(cwd)) setFolders((current) => current.includes(cwd) ? current : [cwd, ...current])
+            }
           } catch { /* suggestions only */ }
           try {
             const value = await apiGet(`fleet/models?instanceId=${encodeURIComponent(instanceId)}`)
@@ -2484,9 +2493,10 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
             cwd: folder.trim(),
             provider,
             model,
+            seed: true,
           })
           if (!result.ok) throw new Error(result.error ?? 'launch failed')
-          await onLaunched(instanceId, result.sessionId)
+          await onLaunched(instanceId, result.sessionId, folder.trim())
         } catch (failure) {
           setError(failure instanceof Error ? failure.message : String(failure))
         } finally {
@@ -2506,7 +2516,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
               list: 'dsf-folder-options',
               value: folder,
               placeholder: tr('launchFolderPlaceholder'),
-              onChange: (event) => setFolder(event.target.value),
+              onChange: (event) => { setFolderTouched(true); setFolder(event.target.value) },
             }),
             h('datalist', { id: 'dsf-folder-options' }, folders.map((item) => h('option', { key: item, value: item })))),
           h('label', { className: 'dsf-launch-row' }, tr('launchModel'),
@@ -2983,9 +2993,30 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
           ctx.effect(() => {
             let cancelled = false
             let tries = 0
-            const target = new URLSearchParams(location.search).get('dshfSession')
+            const params = new URLSearchParams(location.search)
+            const target = params.get('dshfSession')
             if (target === null || target === '') return () => { cancelled = true }
             window.__dshfSessionId = target
+            const cwdHint = params.get('dshfCwd')
+            if (cwdHint !== null && cwdHint !== '') {
+              const openHinted = async () => {
+                const workspace = ctx.get('uiWorkspace')
+                const workspaces = ctx.get('workspaces')
+                if (workspace === undefined || workspaces === undefined) { setTimeout(openHinted, 500); return }
+                try {
+                  const snap = workspaces.list.getSnapshot()
+                  let item = (snap?.items ?? []).find((entry) => entry.path === cwdHint)
+                  if (item === undefined) item = await workspaces.create({ path: cwdHint })
+                  await workspace.openWorkspace(item.workspaceId)
+                  const url = new URL(location.href)
+                  url.searchParams.delete('dshfSession')
+                  url.searchParams.delete('dshfCwd')
+                  history.replaceState(null, '', url.pathname + url.search + url.hash)
+                } catch { setTimeout(openHinted, 500) }
+              }
+              setTimeout(openHinted, 600)
+              return () => { cancelled = true }
+            }
             const tryOpen = () => {
               if (cancelled) return
               const workspace = ctx.get('uiWorkspace')

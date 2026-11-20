@@ -411,6 +411,7 @@ class Fleet {
   async refreshRuntime(runtime) {
     const state = runtime.state
     const instance = state.instance
+    const now = Date.now()
     try {
       let probe = await probeInstance(instance.dshUrl, state.cookie)
       state.latencyMs = probe.latencyMs
@@ -438,7 +439,6 @@ class Fleet {
       }
       // Agent: the preferred data path when the remote runs the agent role.
       // Ping/info change rarely (hostname, version), so cache them for 30s.
-      const now = Date.now()
       if (state.agentAt === undefined || now - state.agentAt > 30000) {
         state.agentAt = now
         state.agent = { ok: false }
@@ -1253,6 +1253,20 @@ switch (command) {
               modelError = macMessage(error)
             }
           }
+          if (body.seed === true) {
+            try {
+              await callRemote(runtime.state.instance.dshUrl, runtime.state.cookie, 'session/prompt', {
+                request: {
+                  requestId: randomUUID(),
+                  sessionId,
+                  mode: 'queue',
+                  content: [{ type: 'text', text: typeof body.seedText === 'string' && body.seedText.trim() !== '' ? body.seedText.trim() : '开始新的工作会话。请用一句话说明你已就绪。' }],
+                },
+              })
+            } catch (error) {
+              modelError = modelError ?? `seed: ${macMessage(error)}`
+            }
+          }
           this.sessionsFullCache.delete(runtime.state.instance.id)
           for (const key of [...this.sessionsCache.keys()]) {
             if (key.startsWith(`${runtime.state.instance.id}|`)) this.sessionsCache.delete(key)
@@ -1380,40 +1394,6 @@ switch (command) {
       if (cached === undefined) await this.refreshUsage('today')
       json(res, { ok: true, usage: this.usageCache.get('today')?.value ?? null })
     })
-    register({
-      kind: 'exact',
-      path: '/fleet/session-tail',
-      handler: async (req, res) => {
-        if (!guard(req, res)) return
-        if (req.method !== 'GET') { json(res, { ok: false, error: 'method not allowed' }, 405); return }
-        try {
-          const url = new URL(req.url, 'http://127.0.0.1')
-          const instanceId = url.searchParams.get('instanceId') ?? ''
-          const sessionId = url.searchParams.get('sessionId') ?? ''
-          const count = Math.max(4, Math.min(40, Number(url.searchParams.get('count') ?? 24) || 24))
-          const runtime = this.runtimes.get(instanceId)
-          if (runtime === undefined) { json(res, { ok: false, error: 'unknown instance' }, 404); return }
-          const page = await callRemote(runtime.state.instance.dshUrl, runtime.state.cookie, 'session/page', {
-            request: { address: { kind: 'session', sessionId }, maxMessages: count },
-          })
-          const messages = (page?.records ?? []).map((record) => {
-            const event = record?.event ?? record
-            const message = event?.data?.message
-            const parts = Array.isArray(message?.content) ? message.content : []
-            return {
-              role: event?.type === 'assistant/message' ? 'assistant' : event?.type === 'user/message' ? 'user' : 'other',
-              text: parts.filter((part) => part?.type === 'text' && typeof part.text === 'string').map((part) => part.text).join(''),
-            }
-          }).filter((message) => message.text.trim() !== '')
-          const assistant = messages.filter((message) => message.role === 'assistant')
-          const last = assistant.length > 0 ? assistant[assistant.length - 1] : null
-          json(res, { ok: true, sessionId, text: last?.text ?? '', updatedAt: Date.now() })
-        } catch (error) {
-          json(res, { ok: false, error: macMessage(error) }, 502)
-        }
-      },
-    })
-
     ctlRoute('/fleet/ctl/tail', async (req, res) => {
       const url = new URL(req.url, 'http://127.0.0.1')
       const instanceId = url.searchParams.get('instanceId') ?? ''
