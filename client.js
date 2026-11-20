@@ -1659,8 +1659,11 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
       const [assistantReload, setAssistantReload] = useState(0)
       const [assistantOverride, setAssistantOverride] = useState(() => { try { return localStorage.getItem('dsh-fleet.assistantSession') } catch { return null } })
       const assistantFrameRef = useRef(null)
+      const assistantLoadAttempts = useRef(0)
       const assistantFrameSession = assistantOverride ?? assistantSessionId
       const [assistantNewBusy, setAssistantNewBusy] = useState(false)
+
+
       const startNewAssistantSession = useCallback(async () => {
         if (assistantNewBusy) return
         const currentInstances = Array.isArray(status.data?.instances) ? status.data.instances : []
@@ -1729,6 +1732,24 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
       useEffect(() => {
         try { localStorage.setItem('dsh-fleet.assistantOpen', assistantOpen ? '1' : '0') } catch { /* private mode */ }
       }, [assistantOpen])
+
+      useEffect(() => {
+        if (!assistantOpen || assistantFrameSession === null) return undefined
+        assistantLoadAttempts.current = 0
+        const timer = setInterval(() => {
+          const doc = assistantFrameRef.current?.contentDocument
+          if (doc === null || doc === undefined) return
+          const text = doc.body?.innerText ?? ''
+          if (!text.includes('选择工作区') && !text.includes('选择一个工作区开始')) return
+          if (assistantLoadAttempts.current >= 2) {
+            setAssistantSessionError('助手会话恢复失败，请点右上角 new 重开一个会话')
+            return
+          }
+          assistantLoadAttempts.current += 1
+          setAssistantReload((value) => value + 1)
+        }, 5000)
+        return () => clearInterval(timer)
+      }, [assistantOpen, assistantFrameSession])
 
       useEffect(() => {
         const fromParentNewSession = async () => {
