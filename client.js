@@ -519,24 +519,6 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-gpu-row{display:flex;gap:8px;justify-content:space-between;padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dsf-tag{font-size:10px;padding:1px 6px;border-radius:99px;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}
 
-.dsf-launch-modal{background:rgba(3,6,10,.72);backdrop-filter:blur(8px)}
-.dsf-launch-dialog{max-width:460px;background:linear-gradient(180deg,#18212b,#111821);border-color:#2b3947;border-radius:16px;padding:0;box-shadow:0 24px 70px rgba(0,0,0,.6)}
-.dsf-dialog-head{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
-.dsf-dialog-head h3{margin:0;font-size:16px;font-weight:650;color:#edf5fc}
-.dsf-dialog-sub{margin:4px 0 0;font-size:11px;color:#7f8d9c}
-.dsf-dialog-x{margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid #2b3947;background:#0e151d;color:#9fb0bd;font-size:16px;line-height:1;cursor:pointer}
-.dsf-dialog-x:hover{color:#fff;border-color:#3f5567}
-.dsf-launch-body{padding:16px 20px 4px;display:flex;flex-direction:column;gap:14px}
-.dsf-launch-field{display:flex;flex-direction:column;gap:6px}
-.dsf-launch-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#7f8d9c}
-.dsf-select,.dsf-launch-dialog .dsf-input{height:38px;box-sizing:border-box;background:#0c131a;border:1px solid #2b3947;border-radius:9px;padding:0 11px;color:#e6eef6;font:inherit;font-size:12.5px;outline:none}
-.dsf-select:focus,.dsf-launch-dialog .dsf-input:focus{border-color:rgba(52,211,153,.65);box-shadow:0 0 0 3px rgba(52,211,153,.12)}
-.dsf-launch-hint{font-size:10.5px;color:#63717f}
-.dsf-model-static{display:flex;align-items:center;height:38px;padding:0 11px;border:1px dashed #2b3947;border-radius:9px;color:#7f8d9c;font-size:12px;background:#0c131a}
-.dsf-dialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px 18px;margin-top:8px}
-.dsf-launch-dialog .dsf-dialog-foot .dsf-btn{height:34px;padding:0 16px;border-radius:9px}
-.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary{background:#34d399;border-color:#34d399;color:#072016;font-weight:650}
-.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary:hover{background:#4ade80}
 .dsf-modal{position:absolute;inset:0;background:var(--dsw-alias-bg-mask-1);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
 .dsf-dialog{width:100%;max-width:520px;background:var(--dsw-alias-bg-overlay);border:1px solid var(--dsw-alias-border-l1);border-radius:12px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .dsf-dialog h3{margin:0 0 6px;font-size:14px}
@@ -557,27 +539,31 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-launch-row{display:flex;flex-direction:column;gap:3px;margin-bottom:10px;font-size:11px;color:var(--dsw-alias-label-secondary)}
 .dsf-launch-row select{width:100%;box-sizing:border-box;background:var(--dsw-alias-bg-layer-2);color:inherit;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;padding:7px 9px;font:inherit;font-size:12px}
 
-/* Launch dialog — forced dark glass, independent of the app theme. */
-.dsf-launch-modal{background:rgba(2,5,9,.78)!important;backdrop-filter:blur(10px)!important}
-.dsf-launch-dialog{width:min(92vw,430px)!important;max-width:430px!important;padding:0!important;background:linear-gradient(180deg,#1a2430 0%,#0f161e 100%)!important;border:1px solid #2f4050!important;border-radius:16px!important;box-shadow:0 28px 80px rgba(0,0,0,.68)!important;color:#e8f0f8!important;overflow:hidden!important}
-.dsf-launch-dialog .dsf-dialog-head{display:flex!important;align-items:flex-start!important;gap:12px!important;padding:18px 20px 14px!important;border-bottom:1px solid rgba(255,255,255,.08)!important;background:linear-gradient(180deg,rgba(255,255,255,.035),transparent)!important}
-.dsf-launch-dialog .dsf-dialog-head h3{margin:0!important;font-size:16px!important;line-height:1.3!important;font-weight:650!important;color:#f4f8fc!important;letter-spacing:.01em!important}
-.dsf-launch-dialog .dsf-dialog-sub{margin:4px 0 0!important;font-size:11px!important;color:#93a5b6!important}
-.dsf-launch-dialog .dsf-dialog-x{width:28px!important;height:28px!important;margin-left:auto!important;border-radius:8px!important;border:1px solid #33475a!important;background:#0c141c!important;color:#9fb2c3!important;font-size:16px!important;cursor:pointer!important}
-.dsf-launch-dialog .dsf-dialog-x:hover{color:#fff!important;border-color:#4b677f!important;background:#14202b!important}
-.dsf-launch-dialog .dsf-launch-body{padding:18px 20px 4px!important;display:flex!important;flex-direction:column!important;gap:15px!important}
-.dsf-launch-dialog .dsf-launch-field{display:flex!important;flex-direction:column!important;gap:6px!important}
-.dsf-launch-dialog .dsf-launch-label{font-size:10px!important;font-weight:650!important;letter-spacing:.09em!important;text-transform:uppercase!important;color:#8ea3b5!important}
-.dsf-launch-dialog .dsf-select,.dsf-launch-dialog .dsf-input{width:100%!important;height:38px!important;box-sizing:border-box!important;background:#0a1118!important;border:1px solid #2c3e4e!important;border-radius:9px!important;padding:0 11px!important;color:#eef5fb!important;font:inherit!important;font-size:12.5px!important;outline:none!important;appearance:auto!important}
-.dsf-launch-dialog .dsf-select:focus,.dsf-launch-dialog .dsf-input:focus{border-color:#34d399!important;box-shadow:0 0 0 3px rgba(52,211,153,.14)!important}
-.dsf-launch-dialog .dsf-launch-hint{font-size:10.5px!important;color:#73879a!important}
-.dsf-launch-dialog .dsf-model-static{display:flex!important;align-items:center!important;height:38px!important;padding:0 11px!important;border:1px dashed #33475a!important;border-radius:9px!important;color:#93a5b6!important;font-size:12px!important;background:#0a1118!important}
-.dsf-launch-dialog .dsf-dialog-foot{display:flex!important;justify-content:flex-end!important;gap:8px!important;padding:14px 20px 18px!important;margin-top:6px!important;border-top:1px solid rgba(255,255,255,.07)!important}
-.dsf-launch-dialog .dsf-dialog-foot .dsf-btn{height:34px!important;padding:0 16px!important;border-radius:9px!important;background:#111b24!important;border:1px solid #2f4050!important;color:#c7d6e3!important;font-weight:550!important}
-.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary{background:linear-gradient(180deg,#3ee6a8,#2bc98c)!important;border-color:#2bc98c!important;color:#042016!important;font-weight:700!important;box-shadow:0 8px 20px rgba(52,211,153,.22)!important}
-.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary:hover{filter:brightness(1.06)!important}
-.dsf-launch-dialog .dsf-err{background:rgba(248,113,113,.1)!important;border:1px solid rgba(248,113,113,.35)!important;border-radius:8px!important;padding:8px 10px!important;color:#fca5a5!important;font-size:11px!important}
-.dsf-launch-dialog option{background:#0a1118!important;color:#eef5fb!important}
+/* Launch dialog: theme-token based, works in both light and dark themes. */
+.dsf-launch-modal{background:var(--dsw-alias-bg-mask-1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.dsf-launch-dialog{width:min(92vw,420px);max-width:420px;padding:0;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.28);color:var(--dsw-alias-label-primary);overflow:hidden}
+.dsf-launch-dialog .dsf-launch-icon{display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border-radius:10px;background:color-mix(in srgb,var(--dsw-alias-state-success-primary) 14%,transparent);border:1px solid color-mix(in srgb,var(--dsw-alias-state-success-primary) 32%,transparent);color:var(--dsw-alias-state-success-primary);font:600 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.02em}
+.dsf-launch-dialog .dsf-dialog-head{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 15px;border-bottom:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2)}
+.dsf-launch-dialog .dsf-dialog-head h3{margin:0;font-size:16px;line-height:1.3;font-weight:600;color:var(--dsw-alias-label-primary);letter-spacing:.01em}
+.dsf-launch-dialog .dsf-dialog-sub{margin:4px 0 0;font-size:11px;color:var(--dsw-alias-label-secondary)}
+.dsf-launch-dialog .dsf-dialog-x{width:28px;height:28px;margin-left:auto;border-radius:8px;border:1px solid var(--dsw-alias-border-l1);background:transparent;color:var(--dsw-alias-label-secondary);font:inherit;font-size:16px;line-height:1;cursor:pointer;transition:background .15s,color .15s}
+.dsf-launch-dialog .dsf-dialog-x:hover{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary)}
+.dsf-launch-dialog .dsf-launch-body{padding:18px 20px 6px;display:flex;flex-direction:column;gap:14px}
+.dsf-launch-dialog .dsf-launch-field{display:flex;flex-direction:column;gap:6px}
+.dsf-launch-dialog .dsf-launch-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--dsw-alias-label-secondary)}
+.dsf-launch-dialog .dsf-select,.dsf-launch-dialog .dsf-input{width:100%;height:38px;box-sizing:border-box;background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l1);border-radius:9px;padding:0 11px;color:var(--dsw-alias-label-primary);font:inherit;font-size:12.5px;outline:none;transition:border-color .15s,box-shadow .15s}
+.dsf-launch-dialog .dsf-select:focus,.dsf-launch-dialog .dsf-input:focus{border-color:var(--dsw-alias-brand-primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--dsw-alias-brand-primary) 16%,transparent)}
+.dsf-launch-dialog .dsf-launch-hint{font-size:10.5px;color:var(--dsw-alias-label-secondary);opacity:.78}
+.dsf-launch-dialog .dsf-model-static{display:flex;align-items:center;height:38px;padding:0 11px;border:1px dashed var(--dsw-alias-border-l1);border-radius:9px;color:var(--dsw-alias-label-secondary);font-size:12px;background:var(--dsw-alias-bg-layer-2)}
+.dsf-launch-dialog .dsf-dialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px 18px;margin-top:8px;border-top:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-layer-2)}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn{height:34px;padding:0 16px;border-radius:9px;background:transparent;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-primary);font-weight:500;transition:background .15s}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn:hover{background:var(--dsw-alias-bg-layer-3)}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary{background:var(--dsw-alias-state-success-primary);border-color:var(--dsw-alias-state-success-primary);color:#fff;font-weight:650;box-shadow:0 6px 16px color-mix(in srgb,var(--dsw-alias-state-success-primary) 28%,transparent)}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary:hover{filter:brightness(1.06)}
+.dsf-launch-dialog .dsf-err{background:color-mix(in srgb,var(--dsw-alias-state-error-primary) 10%,transparent);border:1px solid color-mix(in srgb,var(--dsw-alias-state-error-primary) 35%,transparent);border-radius:8px;padding:8px 10px;color:var(--dsw-alias-state-error-primary);font-size:11px}
+
+
+
 
 .dsf-sessions-head{display:flex;align-items:center;gap:6px;width:100%;background:none;border:none;color:var(--dsw-alias-label-secondary);font:inherit;font-size:11px;padding:0 8px 4px;cursor:pointer;text-align:left}
 .dsf-sessions-head:hover{color:var(--dsw-alias-label-primary)}
@@ -2533,6 +2519,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
       return h('div', { className: 'dsf-modal dsf-launch-modal' },
         h('div', { className: 'dsf-dialog dsf-launch-dialog' },
           h('div', { className: 'dsf-dialog-head' },
+            h('span', { className: 'dsf-launch-icon' }, '>_'),
             h('div', null,
               h('h3', null, tr('launchSession')),
               h('p', { className: 'dsf-dialog-sub' }, '在目标设备上创建一个新会话')),
