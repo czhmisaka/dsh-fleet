@@ -518,6 +518,25 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
 .dsf-gpu{margin-top:8px;padding-top:8px;border-top:1px dashed var(--dsw-alias-border-l1);font-size:12px;color:var(--dsw-alias-label-secondary)}
 .dsf-gpu-row{display:flex;gap:8px;justify-content:space-between;padding:1px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dsf-tag{font-size:10px;padding:1px 6px;border-radius:99px;border:1px solid var(--dsw-alias-border-l1);color:var(--dsw-alias-label-secondary)}
+
+.dsf-launch-modal{background:rgba(3,6,10,.72);backdrop-filter:blur(8px)}
+.dsf-launch-dialog{max-width:460px;background:linear-gradient(180deg,#18212b,#111821);border-color:#2b3947;border-radius:16px;padding:0;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+.dsf-dialog-head{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.dsf-dialog-head h3{margin:0;font-size:16px;font-weight:650;color:#edf5fc}
+.dsf-dialog-sub{margin:4px 0 0;font-size:11px;color:#7f8d9c}
+.dsf-dialog-x{margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid #2b3947;background:#0e151d;color:#9fb0bd;font-size:16px;line-height:1;cursor:pointer}
+.dsf-dialog-x:hover{color:#fff;border-color:#3f5567}
+.dsf-launch-body{padding:16px 20px 4px;display:flex;flex-direction:column;gap:14px}
+.dsf-launch-field{display:flex;flex-direction:column;gap:6px}
+.dsf-launch-label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#7f8d9c}
+.dsf-select,.dsf-launch-dialog .dsf-input{height:38px;box-sizing:border-box;background:#0c131a;border:1px solid #2b3947;border-radius:9px;padding:0 11px;color:#e6eef6;font:inherit;font-size:12.5px;outline:none}
+.dsf-select:focus,.dsf-launch-dialog .dsf-input:focus{border-color:rgba(52,211,153,.65);box-shadow:0 0 0 3px rgba(52,211,153,.12)}
+.dsf-launch-hint{font-size:10.5px;color:#63717f}
+.dsf-model-static{display:flex;align-items:center;height:38px;padding:0 11px;border:1px dashed #2b3947;border-radius:9px;color:#7f8d9c;font-size:12px;background:#0c131a}
+.dsf-dialog-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px 18px;margin-top:8px}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn{height:34px;padding:0 16px;border-radius:9px}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary{background:#34d399;border-color:#34d399;color:#072016;font-weight:650}
+.dsf-launch-dialog .dsf-dialog-foot .dsf-btn.primary:hover{background:#4ade80}
 .dsf-modal{position:absolute;inset:0;background:var(--dsw-alias-bg-mask-1);display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
 .dsf-dialog{width:100%;max-width:520px;background:var(--dsw-alias-bg-overlay);border:1px solid var(--dsw-alias-border-l1);border-radius:12px;padding:16px 18px;box-shadow:0 12px 40px rgba(0,0,0,.35)}
 .dsf-dialog h3{margin:0 0 6px;font-size:14px}
@@ -1733,23 +1752,7 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         try { localStorage.setItem('dsh-fleet.assistantOpen', assistantOpen ? '1' : '0') } catch { /* private mode */ }
       }, [assistantOpen])
 
-      useEffect(() => {
-        if (!assistantOpen || assistantFrameSession === null) return undefined
-        assistantLoadAttempts.current = 0
-        const timer = setInterval(() => {
-          const doc = assistantFrameRef.current?.contentDocument
-          if (doc === null || doc === undefined) return
-          const text = doc.body?.innerText ?? ''
-          if (!text.includes('选择工作区') && !text.includes('选择一个工作区开始')) return
-          if (assistantLoadAttempts.current >= 2) {
-            setAssistantSessionError('助手会话恢复失败，请点右上角 new 重开一个会话')
-            return
-          }
-          assistantLoadAttempts.current += 1
-          setAssistantReload((value) => value + 1)
-        }, 5000)
-        return () => clearInterval(timer)
-      }, [assistantOpen, assistantFrameSession])
+
 
       useEffect(() => {
         const fromParentNewSession = async () => {
@@ -2504,27 +2507,39 @@ body.dsf-resizing{cursor:col-resize!important;user-select:none!important}
         }
       }
 
-      return h('div', { className: 'dsf-modal' },
-        h('div', { className: 'dsf-dialog' },
-          h('h3', null, tr('launchSession')),
-          h('label', { className: 'dsf-launch-row' }, tr('launchDevice'),
-            h('select', { value: instanceId, onChange: (event) => setInstanceId(event.target.value) },
-              candidates.map((instance) => h('option', { key: instance.id, value: instance.id }, instance.name || instance.id)))),
-          h('label', { className: 'dsf-launch-row' }, tr('launchFolder'),
-            h('input', {
-              className: 'dsf-input',
-              list: 'dsf-folder-options',
-              value: folder,
-              placeholder: tr('launchFolderPlaceholder'),
-              onChange: (event) => { setFolderTouched(true); setFolder(event.target.value) },
-            }),
-            h('datalist', { id: 'dsf-folder-options' }, folders.map((item) => h('option', { key: item, value: item })))),
-          h('label', { className: 'dsf-launch-row' }, tr('launchModel'),
-            h('select', { value: choice, onChange: (event) => setChoice(event.target.value), disabled: options.length === 0 },
-              options.length === 0 ? h('option', { value: '' }, '—') : null,
-              options.map((option) => h('option', { key: option.value, value: option.value }, option.label)))),
-          error !== null ? h('div', { className: 'dsf-err' }, error) : null,
-          h('div', { className: 'dsf-row' },
+      return h('div', { className: 'dsf-modal dsf-launch-modal' },
+        h('div', { className: 'dsf-dialog dsf-launch-dialog' },
+          h('div', { className: 'dsf-dialog-head' },
+            h('div', null,
+              h('h3', null, tr('launchSession')),
+              h('p', { className: 'dsf-dialog-sub' }, '在目标设备上创建一个新会话')),
+            h('button', { className: 'dsf-dialog-x', title: tr('authCancel'), onClick: onClose }, '×')),
+          h('div', { className: 'dsf-launch-body' },
+            h('label', { className: 'dsf-launch-field' },
+              h('span', { className: 'dsf-launch-label' }, tr('launchDevice')),
+              h('select', { className: 'dsf-select', value: instanceId, onChange: (event) => setInstanceId(event.target.value) },
+                candidates.map((instance) => h('option', { key: instance.id, value: instance.id }, instance.name || instance.id)))),
+            h('label', { className: 'dsf-launch-field' },
+              h('span', { className: 'dsf-launch-label' }, tr('launchFolder')),
+              h('input', {
+                className: 'dsf-input',
+                list: 'dsf-folder-options',
+                value: folder,
+                placeholder: '留空 = 使用该实例默认工作区',
+                onChange: (event) => { setFolderTouched(true); setFolder(event.target.value) },
+              }),
+              h('datalist', { id: 'dsf-folder-options' }, folders.map((item) => h('option', { key: item, value: item }))),
+              h('span', { className: 'dsf-launch-hint' }, '建议选已注册工作区，查看器才能直接进入对话')),
+            options.length === 0
+              ? h('div', { className: 'dsf-launch-field' },
+                h('span', { className: 'dsf-launch-label' }, tr('launchModel')),
+                h('div', { className: 'dsf-model-static' }, '使用实例默认模型'))
+              : h('label', { className: 'dsf-launch-field' },
+                h('span', { className: 'dsf-launch-label' }, tr('launchModel')),
+                h('select', { className: 'dsf-select', value: choice, onChange: (event) => setChoice(event.target.value) },
+                  options.map((option) => h('option', { key: option.value, value: option.value }, option.label)))),
+            error !== null ? h('div', { className: 'dsf-err' }, error) : null),
+          h('div', { className: 'dsf-dialog-foot' },
             h('button', { className: 'dsf-btn', onClick: onClose }, tr('authCancel')),
             h('button', { className: 'dsf-btn primary', disabled: busy || instanceId === '', onClick: () => void submit() }, busy ? tr('launchBusy') : tr('launchConfirm')))))
     }
