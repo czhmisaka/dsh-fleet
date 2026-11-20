@@ -411,6 +411,7 @@ class Fleet {
   async refreshRuntime(runtime) {
     const state = runtime.state
     const instance = state.instance
+    const now = Date.now()
     try {
       let probe = await probeInstance(instance.dshUrl, state.cookie)
       state.latencyMs = probe.latencyMs
@@ -438,7 +439,6 @@ class Fleet {
       }
       // Agent: the preferred data path when the remote runs the agent role.
       // Ping/info change rarely (hostname, version), so cache them for 30s.
-      const now = Date.now()
       if (state.agentAt === undefined || now - state.agentAt > 30000) {
         state.agentAt = now
         state.agent = { ok: false }
@@ -1251,6 +1251,20 @@ switch (command) {
               })
             } catch (error) {
               modelError = macMessage(error)
+            }
+          }
+          if (body.seed === true) {
+            try {
+              await callRemote(runtime.state.instance.dshUrl, runtime.state.cookie, 'session/prompt', {
+                request: {
+                  requestId: randomUUID(),
+                  sessionId,
+                  mode: 'queue',
+                  content: [{ type: 'text', text: typeof body.seedText === 'string' && body.seedText.trim() !== '' ? body.seedText.trim() : '开始新的工作会话。请用一句话说明你已就绪。' }],
+                },
+              })
+            } catch (error) {
+              modelError = modelError ?? `seed: ${macMessage(error)}`
             }
           }
           this.sessionsFullCache.delete(runtime.state.instance.id)

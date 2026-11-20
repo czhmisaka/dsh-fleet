@@ -194,6 +194,7 @@ The full history lives in **[CHANGELOG.md](CHANGELOG.md)** (changes, fixes and u
 
 | Version | Date | Theme |
 |---|---|---|
+| [v0.6.0](CHANGELOG.md#v0-6-0) | 2026-11-20 | 3D office, speech bubbles, new command, launch fixes |
 | [v0.5.2](CHANGELOG.md#v0-5-2) | 2026-11-19 | Standard CubeSandbox test environment + baked template |
 | [v0.5.1](CHANGELOG.md#v0-5-1) | 2026-11-18 | Draggable sidebars |
 | [v0.5.0](CHANGELOG.md#v0-5-0) | 2026-11-18 | Assistant embeds a native master DSH session |

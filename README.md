@@ -196,6 +196,7 @@ budgetWarnPct: 80        # 告警阈值
 
 | 版本 | 日期 | 主题 |
 |---|---|---|
+| [v0.6.0](CHANGELOG.md#v0-6-0) | 2026-11-20 | 3D 办公室、语言气泡、new 指令与启动修复 |
 | [v0.5.2](CHANGELOG.md#v0-5-2) | 2026-11-19 | 标准 CubeSandbox 测试环境（test-env + 模板烘焙） |
 | [v0.5.1](CHANGELOG.md#v0-5-1) | 2026-11-18 | 左右侧边栏可拖动调宽 |
 | [v0.5.0](CHANGELOG.md#v0-5-0) | 2026-11-18 | 右侧助手改为内嵌 master 原生 DSH 会话 |
